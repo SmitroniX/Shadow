@@ -1,0 +1,14 @@
+{
+  "name": "shadowplex",
+  "version": "1.0.0",
+  "description": "ShadowPlex - Movie & Web Series Streaming and Downloading Platform",
+  "scripts": {
+    "start": "node backend/server.js",
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build"
+  },
+  "keywords": ["streaming", "movies", "series", "video-player", "downloader"],
+  "author": "ShadowPlex Team",
+  "license": "MIT"
+}
