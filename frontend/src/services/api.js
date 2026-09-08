@@ -256,3 +256,53 @@ export async function fetchGenres() {
     count: genreMap[name]
   })).sort((a, b) => b.count - a.count);
 }
+
+export async function fetchPirateBayTorrents(query) {
+  try {
+    const res = await fetch(`${API_BASE}/piratebay?query=${encodeURIComponent(query)}`);
+    const contentType = res.headers.get('content-type');
+    if (res.ok && contentType && contentType.includes('application/json')) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) return data;
+    }
+  } catch (err) {
+    console.warn('Backend TPB endpoint unreachable, trying direct fallback', err);
+  }
+
+  // Direct client-side fallback if backend route is unavailable (e.g. on Netlify static hosting)
+  try {
+    const clean = query.trim().replace(/[^\w\s]/gi, ' ');
+    const res = await fetch(`https://apibay.org/q.php?q=${encodeURIComponent(clean)}&cat=200`);
+    if (res.ok) {
+      const raw = await res.json();
+      if (Array.isArray(raw) && raw.length > 0 && raw[0].id !== '0') {
+        return raw.slice(0, 15).map(item => {
+          const magnet = `magnet:?xt=urn:btih:${item.info_hash}&dn=${encodeURIComponent(item.name)}&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce`;
+          const b = parseInt(item.size, 10);
+          const sizeStr = b >= 1073741824 ? (b / 1073741824).toFixed(2) + ' GB' : (b / 1048576).toFixed(1) + ' MB';
+          const n = item.name.toUpperCase();
+          const quality = (n.includes('2160P') || n.includes('4K') || n.includes('UHD')) ? '4K 2160p UHD' :
+                          (n.includes('1080P') || n.includes('FHD') || n.includes('BLURAY')) ? '1080p Full HD' :
+                          (n.includes('720P') || n.includes('HD')) ? '720p HD' : '1080p Web-DL';
+          return {
+            id: item.id,
+            name: item.name,
+            infoHash: item.info_hash,
+            magnetUrl: magnet,
+            size: sizeStr,
+            seeders: parseInt(item.seeders, 10) || 0,
+            leechers: parseInt(item.leechers, 10) || 0,
+            quality,
+            uploader: item.username || 'VIP',
+            addedDate: item.added ? new Date(parseInt(item.added, 10) * 1000).toLocaleDateString() : 'Recent'
+          };
+        });
+      }
+    }
+  } catch (e) {
+    // Ignore error
+  }
+
+  return [];
+}
+

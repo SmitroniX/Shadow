@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Play, 
@@ -13,10 +13,16 @@ import {
   HardDrive,
   Users,
   Layers,
-  Sparkles
+  Sparkles,
+  Radio,
+  Copy,
+  Check,
+  Search,
+  ExternalLink
 } from 'lucide-react';
 import { useWatchlist } from '../context/WatchlistContext';
 import { useDownloads } from '../context/DownloadContext';
+import { fetchPirateBayTorrents } from '../services/api';
 
 export default function MediaDetailModal({ 
   media, 
@@ -27,6 +33,12 @@ export default function MediaDetailModal({
 }) {
   const [activeTab, setActiveTab] = useState(media.type === 'series' ? 'episodes' : 'downloads');
   const [selectedSeasonIndex, setSelectedSeasonIndex] = useState(0);
+
+  // PirateBay+ State
+  const [pirateTorrents, setPirateTorrents] = useState([]);
+  const [loadingTorrents, setLoadingTorrents] = useState(false);
+  const [tpbSearchQuery, setTpbSearchQuery] = useState(media.title || '');
+  const [copiedId, setCopiedId] = useState(null);
 
   const { isInWatchlist, toggleWatchlist } = useWatchlist();
   const { startDownload } = useDownloads();
@@ -43,6 +55,40 @@ export default function MediaDetailModal({
     .filter(item => item.id !== media.id && (item.industry === media.industry || item.genres?.some(g => media.genres?.includes(g))))
     .slice(0, 4);
 
+  // Load PirateBay+ torrents when tab is active
+  useEffect(() => {
+    if (activeTab === 'piratebay' && pirateTorrents.length === 0) {
+      loadTpbTorrents(media.title);
+    }
+  }, [activeTab, media.title]);
+
+  const loadTpbTorrents = async (term) => {
+    setLoadingTorrents(true);
+    try {
+      const results = await fetchPirateBayTorrents(term);
+      setPirateTorrents(results);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingTorrents(false);
+    }
+  };
+
+  const handleTpbSearch = (e) => {
+    e.preventDefault();
+    if (tpbSearchQuery.trim()) {
+      loadTpbTorrents(tpbSearchQuery);
+    }
+  };
+
+  const handleCopyMagnet = (t) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(t.magnetUrl);
+      setCopiedId(t.id);
+      setTimeout(() => setCopiedId(null), 2500);
+    }
+  };
+
   const handleDownloadClick = (option, episodeTitle = null) => {
     startDownload({
       mediaId: media.id,
@@ -50,7 +96,7 @@ export default function MediaDetailModal({
       episodeTitle,
       quality: option.quality || '1080p FHD',
       size: option.size || '3.6 GB',
-      url: option.url || media.streamSources?.[0]?.url
+      url: option.url || option.magnetUrl || media.streamSources?.[0]?.url
     });
   };
 
@@ -152,11 +198,11 @@ export default function MediaDetailModal({
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 px-6 border-b border-white/10 bg-[#0c0d14]">
+        <div className="flex items-center gap-2 px-6 border-b border-white/10 bg-[#0c0d14] overflow-x-auto no-scrollbar">
           {isSeries && (
             <button
               onClick={() => setActiveTab('episodes')}
-              className={`flex items-center gap-2 py-3 px-4 border-b-2 text-xs sm:text-sm font-bold transition-all ${
+              className={`flex items-center gap-2 py-3 px-3.5 border-b-2 text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
                 activeTab === 'episodes'
                   ? 'border-[#e50914] text-white'
                   : 'border-transparent text-gray-400 hover:text-white'
@@ -169,23 +215,36 @@ export default function MediaDetailModal({
 
           <button
             onClick={() => setActiveTab('downloads')}
-            className={`flex items-center gap-2 py-3 px-4 border-b-2 text-xs sm:text-sm font-bold transition-all ${
+            className={`flex items-center gap-2 py-3 px-3.5 border-b-2 text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
               activeTab === 'downloads'
                 ? 'border-[#e50914] text-white'
                 : 'border-transparent text-gray-400 hover:text-white'
-              }`}
+            }`}
           >
             <Download className="w-4 h-4" />
-            <span>Download Hub</span>
+            <span>Direct Downloads</span>
+          </button>
+
+          {/* PIRATEBAY+ TAB */}
+          <button
+            onClick={() => setActiveTab('piratebay')}
+            className={`flex items-center gap-2 py-3 px-3.5 border-b-2 text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
+              activeTab === 'piratebay'
+                ? 'border-emerald-400 text-emerald-400'
+                : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+          >
+            <Radio className="w-4 h-4" />
+            <span>PirateBay+ Torrents 🧲</span>
           </button>
 
           <button
             onClick={() => setActiveTab('overview')}
-            className={`flex items-center gap-2 py-3 px-4 border-b-2 text-xs sm:text-sm font-bold transition-all ${
+            className={`flex items-center gap-2 py-3 px-3.5 border-b-2 text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
               activeTab === 'overview'
                 ? 'border-[#e50914] text-white'
                 : 'border-transparent text-gray-400 hover:text-white'
-              }`}
+            }`}
           >
             <Film className="w-4 h-4" />
             <span>Overview & Cast</span>
@@ -313,7 +372,7 @@ export default function MediaDetailModal({
                 <div>
                   <h4 className="text-sm font-bold text-white flex items-center gap-2">
                     <HardDrive className="w-4 h-4 text-[#e50914]" />
-                    Dual Audio High-Speed Downloads
+                    Dual Audio High-Speed Direct Mirrors
                   </h4>
                   <p className="text-xs text-gray-400 mt-0.5">
                     Original uncompressed audio tracks with embedded Hindi & English subtitles.
@@ -364,7 +423,138 @@ export default function MediaDetailModal({
             </div>
           )}
 
-          {/* TAB 3: OVERVIEW & CAST */}
+          {/* TAB 3: PIRATEBAY+ (TPB+) TORRENT RELEASES */}
+          {activeTab === 'piratebay' && (
+            <div className="space-y-5">
+              {/* TPB Header & Search Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-400">
+                    <Radio className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      ThePirateBay+ P2P Torrent Indexer
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-900/60 text-emerald-300 border border-emerald-500/30">
+                        Live P2P
+                      </span>
+                    </h4>
+                    <p className="text-xs text-gray-400">
+                      Real-time tracker health, verified VIP uploaders, and 1-click magnet downloads.
+                    </p>
+                  </div>
+                </div>
+
+                {/* TPB Keyword Refinement */}
+                <form onSubmit={handleTpbSearch} className="flex items-center gap-2">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={tpbSearchQuery}
+                      onChange={(e) => setTpbSearchQuery(e.target.value)}
+                      placeholder="Search TPB..."
+                      className="bg-[#12141e] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-emerald-400 w-40 sm:w-48"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors"
+                  >
+                    Search
+                  </button>
+                </form>
+              </div>
+
+              {/* Releases Table / Cards */}
+              {loadingTorrents ? (
+                <div className="py-16 text-center text-gray-400 space-y-2">
+                  <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto" />
+                  <p className="text-xs font-semibold">Querying ThePirateBay+ for "{media.title}"...</p>
+                </div>
+              ) : pirateTorrents.length === 0 ? (
+                <div className="py-12 text-center text-gray-400 space-y-2">
+                  <p className="text-sm font-semibold">No P2P torrents currently found on PirateBay for "{tpbSearchQuery}".</p>
+                  <p className="text-xs text-gray-500">Try searching with alternative spelling or use the Direct Downloads tab.</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {pirateTorrents.map((torrent) => {
+                    const isCopied = copiedId === torrent.id;
+
+                    return (
+                      <div
+                        key={torrent.id}
+                        className="p-3.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-emerald-500/30 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                      >
+                        <div className="space-y-1 max-w-xl">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/30">
+                              {torrent.quality}
+                            </span>
+                            <span className="text-xs font-bold text-white line-clamp-1">
+                              {torrent.name}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-3 text-xs text-gray-400 font-mono">
+                            <span className="font-bold text-amber-400">{torrent.size}</span>
+                            <span>•</span>
+                            <span className="text-emerald-400 font-bold">
+                              🟢 {torrent.seeders} Seeds
+                            </span>
+                            <span>•</span>
+                            <span>🔴 {torrent.leechers} Peers</span>
+                            <span>•</span>
+                            <span className="text-gray-500">By: {torrent.uploader}</span>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-center">
+                          {/* Copy Magnet Link */}
+                          <button
+                            onClick={() => handleCopyMagnet(torrent)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-200 text-xs font-semibold border border-white/10 transition-colors"
+                            title="Copy Magnet Link"
+                          >
+                            {isCopied ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                <span className="text-emerald-400">Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5 text-gray-300" />
+                                <span>Magnet</span>
+                              </>
+                            )}
+                          </button>
+
+                          {/* Download Magnet */}
+                          <a
+                            href={torrent.magnetUrl}
+                            onClick={() => handleDownloadClick({
+                              quality: torrent.quality,
+                              size: torrent.size,
+                              magnetUrl: torrent.magnetUrl
+                            }, torrent.name)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors shadow-sm"
+                            title="Open in Torrent Client"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Download ({torrent.size})</span>
+                          </a>
+                        </div>
+
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 4: OVERVIEW & CAST */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* Synopsis */}

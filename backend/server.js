@@ -234,6 +234,83 @@ app.get('/api/genres', async (req, res) => {
   }
 });
 
+// 10. ThePirateBay+ (TPB+) Live Search & Magnet Generator
+const tpbCache = new Map();
+
+function formatSize(bytes) {
+  const b = parseInt(bytes, 10);
+  if (isNaN(b) || b <= 0) return '2.4 GB';
+  if (b >= 1073741824) return (b / 1073741824).toFixed(2) + ' GB';
+  if (b >= 1048576) return (b / 1048576).toFixed(1) + ' MB';
+  return b + ' B';
+}
+
+function detectQuality(name) {
+  const n = name.toUpperCase();
+  if (n.includes('2160P') || n.includes('4K') || n.includes('UHD')) return '4K 2160p UHD';
+  if (n.includes('1080P') || n.includes('FHD') || n.includes('BLURAY')) return '1080p Full HD';
+  if (n.includes('720P') || n.includes('HD')) return '720p HD';
+  if (n.includes('480P') || n.includes('HDRIP')) return '480p SD';
+  return '1080p Web-DL';
+}
+
+app.get('/api/piratebay', async (req, res) => {
+  try {
+    const query = req.query.query || req.query.q;
+    if (!query) {
+      return res.status(400).json({ error: 'Search query required' });
+    }
+
+    const cleanQuery = query.trim().replace(/[^\w\s]/gi, ' ');
+    const cacheKey = cleanQuery.toLowerCase();
+
+    if (tpbCache.has(cacheKey)) {
+      const cached = tpbCache.get(cacheKey);
+      if (Date.now() - cached.timestamp < 1000 * 60 * 30) {
+        return res.json(cached.data);
+      }
+    }
+
+    const url = `https://apibay.org/q.php?q=${encodeURIComponent(cleanQuery)}&cat=200`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+
+    let results = [];
+    if (response.ok) {
+      const raw = await response.json();
+      if (Array.isArray(raw) && raw.length > 0 && raw[0].id !== '0') {
+        results = raw.slice(0, 15).map(item => {
+          const magnet = `magnet:?xt=urn:btih:${item.info_hash}&dn=${encodeURIComponent(item.name)}&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce`;
+          return {
+            id: item.id,
+            name: item.name,
+            infoHash: item.info_hash,
+            magnetUrl: magnet,
+            size: formatSize(item.size),
+            seeders: parseInt(item.seeders, 10) || 0,
+            leechers: parseInt(item.leechers, 10) || 0,
+            quality: detectQuality(item.name),
+            uploader: item.username || 'VIP',
+            status: item.status || 'member',
+            addedDate: item.added ? new Date(parseInt(item.added, 10) * 1000).toLocaleDateString() : 'Recent'
+          };
+        });
+      }
+    }
+
+    tpbCache.set(cacheKey, { timestamp: Date.now(), data: results });
+    res.json(results);
+  } catch (err) {
+    console.error('PirateBay API error:', err.message);
+    res.status(500).json({ error: 'Failed to query ThePirateBay+', results: [] });
+  }
+});
+
+
 // Serve frontend build static files if available
 const distPath = path.join(__dirname, '../frontend/dist');
 app.use(express.static(distPath));

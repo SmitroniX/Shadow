@@ -41,16 +41,22 @@
   - **Keyboard Shortcuts**: Space (Play/Pause), F (Fullscreen), M (Mute), Arrows (Seek & Volume), Esc (Exit)
   - **Auto-Sync Progress**: Remembers your exact timestamp in seconds
 
-### ⬇️ 3. Multi-Quality Download Hub
+### ⬇️ 3. Multi-Quality Download Hub & ThePirateBay+ (TPB+)
+- **ThePirateBay+ (TPB+) Integration**:
+  - Live P2P torrent search powered by `apibay.org` and verified VIP uploaders.
+  - Real swarm health stats: Seeders (🟢), Leechers (🔴), and file sizes.
+  - 1-click **Magnet Link** generation (`magnet:?xt=urn:btih:...`) with clipboard copy.
+  - Direct integration into the ShadowPlex Download Manager.
 - **Multiple Quality Tiers**:
   - **4K Ultra HD (2160p 10-bit HDR)** — Highest bitrates (~14 GB)
-  - **1080p Full HD (Bluray / x265)** — Balanced crisp fidelity (~3.8 GB)
+  - **1080p Full HD (Bluray / Dual Audio)** — Balanced crisp fidelity (~3.8 GB)
   - **720p HD** — High efficiency (~1.4 GB)
-  - **480p Mobile Save** — Ultra data saver (~650 MB)
+  - **480p Mobile Save** — Ultra data saver (~550 MB)
 - **Series Batch Downloader**: Download entire seasons in one click or select individual episodes.
 - **In-App Download Manager Drawer**:
   - Real-time download progress bar, concurrent speed simulator (e.g. 28.5 MB/s), ETA timer.
   - Controls to Pause, Resume, Cancel, or Save completed files directly to disk.
+
 
 ### 🔍 4. Instant Live Search
 - Global Command Palette (`Ctrl+K` or `/` shortcut).
