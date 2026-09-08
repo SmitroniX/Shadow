@@ -101,7 +101,7 @@ export default function MediaDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 animate-fadeIn">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/90 backdrop-blur-md flex items-center justify-center p-1 sm:p-4 md:p-6 animate-fadeIn">
       
       {/* Modal Card */}
       <div className="relative w-full max-w-4xl bg-[#0f1118] border border-white/10 rounded-2xl overflow-hidden shadow-2xl my-auto">
@@ -109,24 +109,24 @@ export default function MediaDetailModal({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black/70 hover:bg-white/20 text-white transition-colors border border-white/10"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 z-30 p-2.5 sm:p-2 rounded-full bg-black/75 hover:bg-white/20 text-white transition-colors border border-white/10 shadow-lg"
           title="Close (Esc)"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Hero Backdrop Header */}
-        <div className="relative h-64 sm:h-80 md:h-96 w-full overflow-hidden">
+        <div className="relative h-60 sm:h-80 md:h-96 w-full overflow-hidden">
           <img
             src={media.backdrop || media.poster}
             alt={media.title}
             className="w-full h-full object-cover object-top filter brightness-[0.7]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0f1118] via-[#0f1118]/60 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0f1118] via-transparent to-transparent w-2/3" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0f1118] via-transparent to-transparent w-full sm:w-2/3" />
 
           {/* Header Details */}
-          <div className="absolute bottom-6 left-6 right-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
             <div className="space-y-2 max-w-xl">
               <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
                 <span className={`px-2 py-0.5 rounded text-white font-bold uppercase text-[10px] tracking-wider ${
@@ -660,6 +660,32 @@ export default function MediaDetailModal({
             </div>
           )}
 
+        </div>
+
+        {/* Mobile Sticky Quick Action Bar */}
+        <div className="sm:hidden sticky bottom-0 left-0 right-0 z-30 p-2.5 bg-[#0a0c14]/95 backdrop-blur-xl border-t border-white/10 flex items-center gap-2 shadow-2xl">
+          <button
+            onClick={() => onPlay(media)}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white text-black font-extrabold text-xs active:scale-95 shadow-lg"
+          >
+            <Play className="w-4 h-4 fill-black" />
+            <span>Play Now</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('downloads')}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-white/10 text-white font-semibold text-xs active:scale-95 border border-white/10"
+          >
+            <Download className="w-4 h-4 text-[#e50914]" />
+            <span>Downloads</span>
+          </button>
+          <button
+            onClick={() => toggleWatchlist(media)}
+            className={`p-2.5 rounded-xl border ${
+              inWatchlist ? 'bg-[#e50914] text-white border-[#e50914]' : 'bg-white/10 text-gray-300 border-white/10'
+            }`}
+          >
+            {inWatchlist ? <BookmarkCheck className="w-4 h-4 fill-white" /> : <Bookmark className="w-4 h-4" />}
+          </button>
         </div>
 
       </div>

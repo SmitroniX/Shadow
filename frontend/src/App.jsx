@@ -157,7 +157,7 @@ function ShadowPlexApp() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 pb-16">
+      <main className="flex-1 pb-24 lg:pb-16">
         
         {/* TAB 1: HOME VIEW */}
         {currentTab === 'all' && (
@@ -447,7 +447,7 @@ function ShadowPlexApp() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-white/[0.08] bg-[#06070a] pt-10 pb-8">
+      <footer className="mt-auto border-t border-white/[0.08] bg-[#06070a] pt-10 pb-24 lg:pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="space-y-1.5">

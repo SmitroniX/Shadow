@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import { 
   Play, 
   Download, 
@@ -7,8 +7,8 @@ import {
   Star, 
   Info,
   Headphones
-} from 'lucide-react';
-import { useWatchlist } from '../context/WatchlistContext';
+} from "lucide-react";
+import { useWatchlist } from "../context/WatchlistContext";
 
 export default function MediaCard({ 
   media, 
@@ -20,13 +20,12 @@ export default function MediaCard({
   const inWatchlist = isInWatchlist(media.id);
 
   return (
-    <div className="group relative rounded-xl overflow-hidden bg-[#11131b] border border-white/[0.06] hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 flex flex-col cursor-pointer">
-      
-      {/* Poster Image */}
-      <div 
-        onClick={() => onOpenDetails(media)} 
-        className="relative aspect-[2/3] w-full overflow-hidden bg-[#161822]"
-      >
+    <div 
+      onClick={() => onOpenDetails(media)}
+      className="group relative rounded-xl overflow-hidden bg-[#11131b] border border-white/[0.06] hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 active:scale-[0.98] flex flex-col cursor-pointer select-none"
+    >
+      {/* Poster Image Container */}
+      <div className="relative aspect-[2/3] w-full overflow-hidden bg-[#161822]">
         <img
           src={media.poster}
           alt={media.title}
@@ -38,34 +37,43 @@ export default function MediaCard({
         <div className="absolute inset-0 bg-gradient-to-t from-[#11131b] via-transparent to-black/50 opacity-60 group-hover:opacity-85 transition-opacity" />
 
         {/* Top Badges */}
-        <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">
-          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded backdrop-blur-md uppercase tracking-wider ${
-            media.industry === 'Bollywood' 
-              ? 'bg-amber-700/90 text-white' 
-              : 'bg-blue-700/90 text-white'
+        <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none z-10">
+          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded backdrop-blur-md uppercase tracking-wider shadow ${
+            media.industry === "Bollywood" 
+              ? "bg-amber-600/90 text-white" 
+              : "bg-blue-600/90 text-white"
           }`}>
-            {media.industry === 'Bollywood' ? 'Bollywood' : 'Hollywood'}
+            {media.industry === "Bollywood" ? "Bollywood" : "Hollywood"}
           </span>
 
-          <div className="flex items-center gap-1 bg-black/75 backdrop-blur-md px-1.5 py-0.5 rounded text-[11px] font-bold text-amber-400 border border-white/10">
+          <div className="flex items-center gap-1 bg-black/75 backdrop-blur-md px-1.5 py-0.5 rounded text-[11px] font-bold text-amber-400 border border-white/10 shadow">
             <Star className="w-3 h-3 fill-amber-400" />
             <span>{media.imdb}</span>
           </div>
         </div>
 
         {/* Bottom Audio Tag on Poster */}
-        <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-[10px] text-gray-300 pointer-events-none">
-          <span className="bg-black/80 backdrop-blur-md px-1.5 py-0.5 rounded border border-white/10 text-[10px] font-medium text-emerald-400">
-            {media.audio?.includes('Dual') ? 'Dual Audio' : 'Hindi 5.1'}
-          </span>
-          <span className="bg-black/80 backdrop-blur-md px-1 py-0.5 rounded border border-white/10 text-[9px] font-mono text-gray-300">
-            4K
+        <div className="absolute bottom-2 left-2 flex items-center gap-1 text-[10px] text-gray-300 pointer-events-none z-10">
+          <span className="bg-black/80 backdrop-blur-md px-1.5 py-0.5 rounded border border-white/10 text-[9px] sm:text-[10px] font-medium text-emerald-400">
+            {media.audio?.includes("Dual") ? "Dual Audio" : "Hindi 5.1"}
           </span>
         </div>
 
-        {/* Hover Action Overlay */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-250 bg-black/75 backdrop-blur-[2px] p-3">
-          
+        {/* Direct Mobile Quick-Play Floating Button (Visible on mobile screens) */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onPlay(media);
+          }}
+          className="sm:hidden absolute bottom-2 right-2 z-20 w-9 h-9 rounded-full bg-[#e50914] text-white flex items-center justify-center shadow-xl active:scale-90 transition-transform"
+          title="Play Now"
+          aria-label="Play Now"
+        >
+          <Play className="w-4 h-4 fill-white ml-0.5" />
+        </button>
+
+        {/* Desktop Hover Action Overlay */}
+        <div className="hidden sm:flex absolute inset-0 flex-col items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black/75 backdrop-blur-[2px] p-3 z-20">
           {/* Quick Play Button */}
           <button
             onClick={(e) => {
@@ -78,7 +86,7 @@ export default function MediaCard({
             <Play className="w-5 h-5 fill-black ml-0.5" />
           </button>
 
-          {/* Sub-actions */}
+          {/* Sub-actions: Download, Watchlist, Info */}
           <div className="flex items-center gap-2">
             <button
               onClick={(e) => {
@@ -98,8 +106,8 @@ export default function MediaCard({
               }}
               className={`p-2 rounded-lg border transition-colors ${
                 inWatchlist
-                  ? 'bg-[#e50914] text-white border-[#e50914]'
-                  : 'bg-white/15 hover:bg-white/25 text-gray-300 hover:text-white border-white/10'
+                  ? "bg-[#e50914] text-white border-[#e50914]"
+                  : "bg-white/15 hover:bg-white/25 text-gray-300 hover:text-white border-white/10"
               }`}
               title={inWatchlist ? "Remove from Watchlist" : "Add to Watchlist"}
             >
@@ -117,36 +125,32 @@ export default function MediaCard({
               <Info className="w-4 h-4" />
             </button>
           </div>
-
         </div>
 
       </div>
 
       {/* Info Details Section */}
-      <div 
-        onClick={() => onOpenDetails(media)} 
-        className="p-3 flex flex-col flex-grow justify-between gap-1.5"
-      >
+      <div className="p-2.5 sm:p-3 flex flex-col flex-grow justify-between gap-1">
         <div>
           <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-[#e50914] transition-colors line-clamp-1">
             {media.title}
           </h3>
           
-          <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-0.5">
+          <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-gray-400 mt-0.5">
             <span>{media.releaseYear}</span>
             <span>•</span>
             <span className="text-gray-300">
-              {media.genres?.[0] || 'Drama'}
+              {media.genres?.[0] || "Cinema"}
             </span>
             <span>•</span>
-            <span className="text-[10px] text-gray-500 uppercase font-bold">
-              {media.type === 'series' ? 'Series' : 'Movie'}
+            <span className="text-[9px] sm:text-[10px] text-gray-500 uppercase font-bold">
+              {media.type === "series" ? "Series" : "Movie"}
             </span>
           </div>
         </div>
 
         {/* Runtime / Director */}
-        <div className="text-[10px] text-gray-500 font-medium line-clamp-1">
+        <div className="text-[9px] sm:text-[10px] text-gray-500 font-medium line-clamp-1">
           {media.director ? `Dir. ${media.director}` : media.duration}
         </div>
       </div>
