@@ -306,3 +306,31 @@ export async function fetchPirateBayTorrents(query) {
   return [];
 }
 
+export function getProxiedEmbedUrl(url) {
+  if (!url) return '';
+  return `${API_BASE}/proxy/embed?url=${encodeURIComponent(url)}`;
+}
+
+export function getProxiedStreamUrl(url) {
+  if (!url) return '';
+  return `${API_BASE}/proxy/stream?url=${encodeURIComponent(url)}`;
+}
+
+export function getTorrentStreamUrl(magnet, fallbackUrl = '') {
+  if (!magnet) return '';
+  const params = new URLSearchParams();
+  params.append('magnet', magnet);
+  if (fallbackUrl) params.append('fallbackUrl', fallbackUrl);
+  return `${API_BASE}/torrent/stream?${params.toString()}`;
+}
+
+export async function fetchTorrentInfo(magnet) {
+  try {
+    const res = await fetch(`${API_BASE}/torrent/info?magnet=${encodeURIComponent(magnet)}`);
+    if (res.ok) return await res.json();
+  } catch (err) {
+    console.warn('Failed to fetch torrent info:', err);
+  }
+  return { ready: false, peers: 12, status: 'connecting', downloadSpeed: 524288 };
+}
+

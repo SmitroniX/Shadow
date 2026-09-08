@@ -40,6 +40,7 @@ function ShadowPlexApp() {
   const [playerMedia, setPlayerMedia] = useState(null);
   const [playerEpisode, setPlayerEpisode] = useState(null);
   const [playerStartTime, setPlayerStartTime] = useState(0);
+  const [playerTorrent, setPlayerTorrent] = useState(null);
 
   const [detailMedia, setDetailMedia] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -69,10 +70,11 @@ function ShadowPlexApp() {
   }, []);
 
   // Handlers
-  const handlePlayMedia = (media, startTime = 0) => {
+  const handlePlayMedia = (media, startTime = 0, torrent = null) => {
     setPlayerMedia(media);
     setPlayerEpisode(null);
     setPlayerStartTime(startTime);
+    setPlayerTorrent(torrent);
     setDetailMedia(null);
   };
 
@@ -80,6 +82,7 @@ function ShadowPlexApp() {
     setPlayerMedia(media);
     setPlayerEpisode(episode);
     setPlayerStartTime(0);
+    setPlayerTorrent(null);
     setDetailMedia(null);
   };
 
@@ -486,9 +489,11 @@ function ShadowPlexApp() {
           media={playerMedia}
           episode={playerEpisode}
           initialTime={playerStartTime}
+          initialTorrent={playerTorrent}
           onClose={() => {
             setPlayerMedia(null);
             setPlayerEpisode(null);
+            setPlayerTorrent(null);
           }}
           onPlayNextEpisode={handlePlayNextEpisode}
         />

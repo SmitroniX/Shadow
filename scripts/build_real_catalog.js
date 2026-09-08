@@ -22,7 +22,7 @@ function fetchJson(url) {
 
 const movieConfigs = [
   // Hollywood Blockbusters
-  { id: 872585, industry: 'Hollywood', rank: 1, sampleStream: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" },
+  { id: 872585, industry: 'Hollywood', rank: 1, sampleStream: "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-720p.mp4" },
   { id: 693134, industry: 'Hollywood', rank: 2, sampleStream: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
   { id: 533535, industry: 'Hollywood', rank: 5, sampleStream: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" },
   { id: 157336, industry: 'Hollywood', rank: 4, sampleStream: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4" },
@@ -30,7 +30,7 @@ const movieConfigs = [
   { id: 27205, industry: 'Hollywood', rank: 9, sampleStream: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4" },
   { id: 569094, industry: 'Hollywood', rank: 11, sampleStream: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4" },
   { id: 76600, industry: 'Hollywood', rank: 13, sampleStream: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4" },
-  { id: 558449, industry: 'Hollywood', rank: 15, sampleStream: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" },
+  { id: 558449, industry: 'Hollywood', rank: 15, sampleStream: "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-720p.mp4" },
   { id: 603692, industry: 'Hollywood', rank: 17, sampleStream: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
   
   // Bollywood Blockbusters
@@ -38,7 +38,7 @@ const movieConfigs = [
   { id: 781732, industry: 'Bollywood', rank: 6, sampleStream: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" },
   { id: 1163258, industry: 'Bollywood', rank: 8, sampleStream: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4" },
   { id: 1112426, industry: 'Bollywood', rank: 10, sampleStream: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4" },
-  { id: 801688, industry: 'Bollywood', rank: 12, sampleStream: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" },
+  { id: 801688, industry: 'Bollywood', rank: 12, sampleStream: "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-720p.mp4" },
   { id: 864692, industry: 'Bollywood', rank: 14, sampleStream: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4" },
   { id: 579974, industry: 'Bollywood', rank: 16, sampleStream: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4" },
   { id: 587412, industry: 'Bollywood', rank: 18, sampleStream: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" },
@@ -183,9 +183,9 @@ async function run() {
       duration: `${ep.runtime || 52}m`,
       overview: ep.overview || "An intense, gripping episode driving the central conflict forward.",
       thumbnail: ep.still_path ? `https://image.tmdb.org/t/p/w500${ep.still_path}` : (data.backdrop_path ? `https://image.tmdb.org/t/p/w500${data.backdrop_path}` : 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=500'),
-      streamUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+      streamUrl: "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-720p.mp4",
       embedUrl: `https://vidsrc.to/embed/tv/${imdbId}/1/${ep.episode_number}`,
-      downloadUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+      downloadUrl: "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-720p.mp4",
       size: "1.3 GB"
     }));
 
@@ -197,7 +197,7 @@ async function run() {
         batchDownload: {
           size: `${(episodesList.length * 1.3).toFixed(1)} GB`,
           quality: "1080p Complete Season Pack (Dual Audio)",
-          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4"
+          url: "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-720p.mp4"
         },
         episodes: episodesList
       }
@@ -243,7 +243,7 @@ async function run() {
         },
         { 
           server: "ShadowDirect HighSpeed MP4", 
-          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4", 
+          url: "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-720p.mp4", 
           quality: "Direct HTML5 Stream" 
         }
       ],
@@ -254,14 +254,14 @@ async function run() {
           size: `${(episodesList.length * 1.3).toFixed(1)} GB`, 
           codec: "H.265 HEVC Complete Pack", 
           server: "ShadowFast VIP Cloud", 
-          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" 
+          url: "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-720p.mp4" 
         },
         { 
           quality: "Full Season 1 (720p HD)", 
           size: `${(episodesList.length * 0.7).toFixed(1)} GB`, 
           codec: "x264 Web-DL Pack", 
           server: "Google Drive Fast Mirror", 
-          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" 
+          url: "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-720p.mp4" 
         }
       ],
       views: Math.floor(Math.random() * 900000 + 500000),

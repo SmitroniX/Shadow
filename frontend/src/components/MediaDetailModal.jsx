@@ -511,6 +511,19 @@ export default function MediaDetailModal({
 
                         {/* Action Buttons */}
                         <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-center">
+                          {/* Stream Torrent Directly */}
+                          <button
+                            onClick={() => onPlay(media, 0, {
+                              ...torrent,
+                              isTorrentStream: true
+                            })}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs font-extrabold transition-all shadow-md active:scale-95 group"
+                            title="Stream Directly with PirateBay+ P2P"
+                          >
+                            <Play className="w-3.5 h-3.5 fill-white group-hover:scale-110 transition-transform" />
+                            <span>Stream P2P</span>
+                          </button>
+
                           {/* Copy Magnet Link */}
                           <button
                             onClick={() => handleCopyMagnet(torrent)}
@@ -538,11 +551,11 @@ export default function MediaDetailModal({
                               size: torrent.size,
                               magnetUrl: torrent.magnetUrl
                             }, torrent.name)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors shadow-sm"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-200 text-xs font-semibold border border-white/10 transition-colors shadow-sm"
                             title="Open in Torrent Client"
                           >
                             <Download className="w-3.5 h-3.5" />
-                            <span>Download ({torrent.size})</span>
+                            <span>Magnet File</span>
                           </a>
                         </div>
 
