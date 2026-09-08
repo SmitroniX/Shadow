@@ -65,7 +65,7 @@ export default function ShadowPlayer({
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [showServerMenu, setShowServerMenu] = useState(false);
-  const [selectedServerIndex, setSelectedServerIndex] = useState(initialTorrent ? 1 : 0);
+  const [selectedServerIndex, setSelectedServerIndex] = useState(initialTorrent ? 2 : 0);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [screenFit, setScreenFit] = useState("contain"); // "contain" | "cover"
   const [isBuffering, setIsBuffering] = useState(false);
@@ -117,7 +117,7 @@ export default function ShadowPlayer({
 
   // Poll Torrent Telemetry when PirateBay server is active
   useEffect(() => {
-    if (selectedServerIndex !== 1 || !activeTorrent?.magnetUrl) return;
+    if (selectedServerIndex !== 2 || !activeTorrent?.magnetUrl) return;
 
     const interval = setInterval(async () => {
       const info = await fetchTorrentInfo(activeTorrent.magnetUrl);
@@ -139,12 +139,24 @@ export default function ShadowPlayer({
   // =========================================================================
   const streamSources = [
     { 
-      id: "direct",
-      server: "⚡ ShadowDirect Fast CDN (HTML5)", 
-      url: directStreamUrl,
-      quality: "4K / 1080p Ultra Direct",
-      isDirect: true,
-      desc: "Fastest ad-free HTML5 cinema stream with native mobile controls & seek"
+      id: "vidsrc_me",
+      server: "🌐 VidSrc Pro Cinema HD", 
+      embedUrl: isSeries
+        ? `https://vidsrc.me/embed/tv?imdb=${imdbId}&season=${seasonNum}&episode=${epNum}`
+        : `https://vidsrc.me/embed/movie?imdb=${imdbId}`, 
+      quality: "1080p / 4K Real Movie",
+      isDirect: false,
+      desc: "Official full-length movie & series stream with multi-audio & subtitles"
+    },
+    { 
+      id: "vidlink",
+      server: "🌐 VidLink 1080p Ultra", 
+      embedUrl: isSeries
+        ? `https://vidlink.pro/tv/${tmdbId}/${seasonNum}/${epNum}`
+        : `https://vidlink.pro/movie/${tmdbId}`, 
+      quality: "UltraFast 1080p",
+      isDirect: false,
+      desc: "Fast, responsive mirror playing real movie with clean interface"
     },
     { 
       id: "piratebay",
@@ -158,26 +170,6 @@ export default function ShadowPlayer({
       desc: "Direct P2P torrent swarm streaming with live seeds & leechers"
     },
     { 
-      id: "vidsrc_me",
-      server: "🌐 VidSrc Pro Cinema Mirror", 
-      embedUrl: isSeries
-        ? `https://vidsrc.me/embed/tv?imdb=${imdbId}&season=${seasonNum}&episode=${epNum}`
-        : `https://vidsrc.me/embed/movie?imdb=${imdbId}`, 
-      quality: "1080p Multi-Language",
-      isDirect: false,
-      desc: "Verified working mirror for global Hollywood & Bollywood cinema"
-    },
-    { 
-      id: "vidlink",
-      server: "🌐 VidLink 1080p Fast Stream", 
-      embedUrl: isSeries
-        ? `https://vidlink.pro/tv/${tmdbId}/${seasonNum}/${epNum}`
-        : `https://vidlink.pro/movie/${tmdbId}`, 
-      quality: "UltraFast 1080p",
-      isDirect: false,
-      desc: "Fast, responsive mirror optimized for mobile & web"
-    },
-    { 
       id: "twoembed",
       server: "🌐 2Embed Ultra HD Mirror", 
       embedUrl: isSeries
@@ -185,11 +177,21 @@ export default function ShadowPlayer({
         : `https://www.2embed.cc/embed/${imdbId || tmdbId}`, 
       quality: "1080p Web-DL",
       isDirect: false,
-      desc: "Reliable international backup stream server"
+      desc: "Reliable international cloud backup stream server"
+    },
+    { 
+      id: "smashy",
+      server: "🌐 SmashyStream Dual Audio", 
+      embedUrl: isSeries
+        ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${seasonNum}&episode=${epNum}`
+        : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`, 
+      quality: "1080p Dual Audio",
+      isDirect: false,
+      desc: "Multi-language player with Hindi & English audio options"
     },
     { 
       id: "vidsrc_to",
-      server: "🌐 VidSrc.to Cinema Stream", 
+      server: "🌐 VidSrc.to Legacy Mirror", 
       embedUrl: isSeries
         ? `https://vidsrc.to/embed/tv/${imdbId || tmdbId}/${seasonNum}/${epNum}`
         : `https://vidsrc.to/embed/movie/${imdbId || tmdbId}`, 
@@ -198,14 +200,12 @@ export default function ShadowPlayer({
       desc: "Alternative cloud mirror with multi-server selectors"
     },
     { 
-      id: "smashy",
-      server: "🌐 SmashyStream Multi-Server", 
-      embedUrl: isSeries
-        ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${seasonNum}&episode=${epNum}`
-        : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`, 
-      quality: "1080p Dual Audio",
-      isDirect: false,
-      desc: "Multi-language player with Hindi & English audio options"
+      id: "direct",
+      server: "⚡ Direct HTML5 Player (Preview)", 
+      url: directStreamUrl,
+      quality: "Direct HTML5 Stream",
+      isDirect: true,
+      desc: "Custom HTML5 video player engine with mobile gestures & scrub"
     }
   ];
 
@@ -565,11 +565,12 @@ export default function ShadowPlayer({
               </button>
 
               <button
-                onClick={() => setSelectedServerIndex(0)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#e50914]/20 hover:bg-[#e50914] text-[#e50914] hover:text-white border border-[#e50914]/40 font-bold transition-all"
+                onClick={() => setSelectedServerIndex(1)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-semibold transition-all"
+                title="Switch to alternative fast mirror"
               >
-                <Zap className="w-3 h-3" />
-                <span>Switch to Direct HD</span>
+                <RefreshCw className="w-3 h-3 text-[#e50914]" />
+                <span>Next Mirror</span>
               </button>
             </div>
           </div>
