@@ -546,14 +546,14 @@ app.all("/api/torrent/stream", async (req, res) => {
       engine = cached.engine;
     }
 
-    // Wait up to 5.5s for metadata
+    // Wait up to 10s for torrent metadata and peer handshake
     const waitForReady = new Promise((resolve) => {
       if (cached.ready && cached.file) return resolve(cached.file);
       const onReady = () => {
         if (cached.file) resolve(cached.file);
       };
       engine.once("ready", onReady);
-      setTimeout(() => resolve(null), 5500);
+      setTimeout(() => resolve(null), 10000);
     });
 
     const file = await waitForReady;
@@ -561,33 +561,41 @@ app.all("/api/torrent/stream", async (req, res) => {
       return serveFile(file);
     }
 
-    // Smart seamless CDN fallback if swarm metadata takes time
-    console.log(`[TorrentStream] Swarm initializing for ${infoHash}. Serving high-speed stream fallback.`);
-    const streamBackup = fallbackUrl || "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-720p.mp4";
-
-    const headers = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    };
-    if (req.headers.range) {
-      headers["Range"] = req.headers.range;
-    }
-
-    const backupRes = await fetch(streamBackup, { 
-      method: req.method === "HEAD" ? "HEAD" : "GET",
-      headers 
-    });
-    res.status(backupRes.status);
-    backupRes.headers.forEach((val, key) => {
-      if (["content-range", "content-length", "content-type", "accept-ranges"].includes(key.toLowerCase())) {
-        res.setHeader(key, val);
+    // If a non-sample custom fallback URL was provided, proxy it; otherwise notify client cleanly
+    if (fallbackUrl && !fallbackUrl.includes("View_From_A_Blue_Moon") && !fallbackUrl.includes("commondatastorage") && isValidHttpUrl(fallbackUrl)) {
+      console.log(`[TorrentStream] Swarm initializing for ${infoHash}. Serving specified direct fallback.`);
+      const headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      };
+      if (req.headers.range) {
+        headers["Range"] = req.headers.range;
       }
-    });
-    res.setHeader("Access-Control-Allow-Origin", "*");
 
-    if (req.method === "HEAD" || !backupRes.body) {
-      return res.end();
+      const backupRes = await fetch(fallbackUrl, { 
+        method: req.method === "HEAD" ? "HEAD" : "GET",
+        headers 
+      });
+      res.status(backupRes.status);
+      backupRes.headers.forEach((val, key) => {
+        if (["content-range", "content-length", "content-type", "accept-ranges"].includes(key.toLowerCase())) {
+          res.setHeader(key, val);
+        }
+      });
+      res.setHeader("Access-Control-Allow-Origin", "*");
+
+      if (req.method === "HEAD" || !backupRes.body) {
+        return res.end();
+      }
+      return Readable.fromWeb(backupRes.body).pipe(res);
     }
-    Readable.fromWeb(backupRes.body).pipe(res);
+
+    // Torrent swarm is still connecting
+    console.log(`[TorrentStream] Swarm still connecting for ${infoHash}. Returning 503 so player can use instant cloud mirror.`);
+    res.status(503).json({
+      error: "Torrent swarm is discovering peers and metadata. Switch to an instant cloud mirror for immediate playback.",
+      infoHash,
+      ready: false
+    });
 
   } catch (err) {
     console.error("Torrent stream error:", err.message);

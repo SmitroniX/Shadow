@@ -89,9 +89,10 @@ export default function ShadowPlayer({
   const imdbId = media.imdbId || "";
   const tmdbId = media.tmdbId || 872585;
 
-  // Reliable Fallback Direct Stream (open CDN)
-  const reliableDirectSample = "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-720p.mp4";
-  const directStreamUrl = episode?.streamUrl || media.streamSources?.find(s => s.url && !s.url.includes("commondatastorage"))?.url || reliableDirectSample;
+  // Direct stream url (only if explicit verified stream exists)
+  const directStreamUrl = (episode?.streamUrl && !episode.streamUrl.includes("View_From_A_Blue_Moon") && !episode.streamUrl.includes("commondatastorage"))
+    ? episode.streamUrl
+    : (media.streamSources?.find(s => s.url && !s.url.includes("View_From_A_Blue_Moon") && !s.url.includes("commondatastorage"))?.url || "");
 
   // Load PirateBay+ torrents for this media if not already loaded
   useEffect(() => {
@@ -142,8 +143,8 @@ export default function ShadowPlayer({
       id: "vidsrc_me",
       server: "🌐 VidSrc Pro Cinema HD", 
       embedUrl: isSeries
-        ? `https://vidsrc.me/embed/tv?imdb=${imdbId}&season=${seasonNum}&episode=${epNum}`
-        : `https://vidsrc.me/embed/movie?imdb=${imdbId}`, 
+        ? (imdbId ? `https://vidsrc.me/embed/tv?imdb=${imdbId}&season=${seasonNum}&episode=${epNum}` : `https://vidsrc.me/embed/tv?tmdb=${tmdbId}&season=${seasonNum}&episode=${epNum}`)
+        : (imdbId ? `https://vidsrc.me/embed/movie?imdb=${imdbId}` : `https://vidsrc.me/embed/movie?tmdb=${tmdbId}`), 
       quality: "1080p / 4K Real Movie",
       isDirect: false,
       desc: "Official full-length movie & series stream with multi-audio & subtitles"
@@ -161,9 +162,9 @@ export default function ShadowPlayer({
     { 
       id: "piratebay",
       server: "🏴‍☠️ PirateBay+ P2P Swarm Stream", 
-      url: activeTorrent 
-        ? getTorrentStreamUrl(activeTorrent.magnetUrl, directStreamUrl)
-        : getTorrentStreamUrl(`magnet:?xt=urn:btih:${media.imdbId || "491aa0e19cbdb03b100961db82315c08643a6139"}`, directStreamUrl),
+      url: activeTorrent?.magnetUrl 
+        ? getTorrentStreamUrl(activeTorrent.magnetUrl)
+        : (media.imdbId ? getTorrentStreamUrl(`magnet:?xt=urn:btih:${media.imdbId}`) : ""),
       quality: activeTorrent?.quality || "1080p BluRay P2P",
       isDirect: true,
       isTorrent: true,
@@ -198,14 +199,6 @@ export default function ShadowPlayer({
       quality: "1080p Auto",
       isDirect: false,
       desc: "Alternative cloud mirror with multi-server selectors"
-    },
-    { 
-      id: "direct",
-      server: "⚡ Direct HTML5 Player (Preview)", 
-      url: directStreamUrl,
-      quality: "Direct HTML5 Stream",
-      isDirect: true,
-      desc: "Custom HTML5 video player engine with mobile gestures & scrub"
     }
   ];
 
@@ -215,7 +208,7 @@ export default function ShadowPlayer({
 
   // Compute active URLs with In-Built Proxy support
   const rawVideoUrl = currentSource.url || directStreamUrl;
-  const activeVideoUrl = useInbuiltProxy 
+  const activeVideoUrl = useInbuiltProxy && !currentSource.isTorrent && rawVideoUrl.startsWith("http")
     ? getProxiedStreamUrl(rawVideoUrl)
     : rawVideoUrl;
 
@@ -565,7 +558,7 @@ export default function ShadowPlayer({
               </button>
 
               <button
-                onClick={() => setSelectedServerIndex(1)}
+                onClick={() => setSelectedServerIndex(prev => (prev + 1) % streamSources.length)}
                 className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-semibold transition-all"
                 title="Switch to alternative fast mirror"
               >
@@ -607,8 +600,14 @@ export default function ShadowPlayer({
             }}
             onPause={() => setIsPlaying(false)}
             onError={() => {
-              setHasError(true);
+              console.warn("Direct stream failed or blocked; auto-recovering to VidSrc Pro Cinema HD");
               setIsBuffering(false);
+              if (selectedServerIndex !== 0) {
+                setSelectedServerIndex(0);
+                setHasError(false);
+              } else {
+                setHasError(true);
+              }
             }}
             onEnded={() => {
               setIsPlaying(false);
@@ -673,10 +672,43 @@ export default function ShadowPlayer({
                 <div>
                   <h3 className="text-base font-bold text-white">Playback Blocked or Stream Offline</h3>
                   <p className="text-xs text-gray-400 mt-1">
-                    Direct stream failed due to CORS or host restrictions. Use the in-built proxy or switch to verified cloud mirrors.
+                    Direct stream failed due to CORS or host restrictions. Switch to an instant verified cinema mirror or activate the in-built proxy.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 pt-2">
+                  <button
+                    onClick={() => {
+                      setSelectedServerIndex(0);
+                      setHasError(false);
+                    }}
+                    className="w-full py-2.5 px-4 rounded-xl bg-[#e50914] hover:bg-[#b80710] text-white text-xs font-bold transition-all shadow-lg flex items-center justify-center gap-2"
+                  >
+                    <Play className="w-4 h-4 fill-white" />
+                    <span>Switch to VidSrc Pro Cinema Mirror</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setSelectedServerIndex(1);
+                      setHasError(false);
+                    }}
+                    className="w-full py-2 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow flex items-center justify-center gap-2"
+                  >
+                    <Server className="w-4 h-4" />
+                    <span>Switch to VidLink 1080p Ultra</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setSelectedServerIndex(2);
+                      setHasError(false);
+                    }}
+                    className="w-full py-2 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold transition-all shadow flex items-center justify-center gap-2"
+                  >
+                    <Radio className="w-4 h-4" />
+                    <span>Switch to PirateBay+ P2P Stream</span>
+                  </button>
+
                   <button
                     onClick={() => {
                       setUseInbuiltProxy(true);
@@ -686,25 +718,10 @@ export default function ShadowPlayer({
                         videoRef.current.play().catch(() => {});
                       }
                     }}
-                    className="w-full py-2.5 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-all shadow-lg flex items-center justify-center gap-2"
+                    className="w-full py-2 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-all shadow-lg flex items-center justify-center gap-2"
                   >
                     <ShieldCheck className="w-4 h-4" />
                     <span>Retry with In-Built Anti-Block Proxy</span>
-                  </button>
-
-                  <button
-                    onClick={() => setSelectedServerIndex(1)}
-                    className="w-full py-2 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold transition-all shadow flex items-center justify-center gap-2"
-                  >
-                    <Radio className="w-4 h-4" />
-                    <span>Switch to PirateBay+ P2P Stream</span>
-                  </button>
-
-                  <button
-                    onClick={() => setSelectedServerIndex(2)}
-                    className="w-full py-2 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/10 transition-colors"
-                  >
-                    Switch to VidSrc Pro Cinema Mirror
                   </button>
                 </div>
               </div>
@@ -775,7 +792,7 @@ export default function ShadowPlayer({
               <div className="absolute right-0 mt-2 w-80 bg-[#11131c] border border-white/15 rounded-2xl shadow-2xl py-2 z-50 glass-dropdown animate-fadeIn">
                 <div className="px-3 py-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-white/10 flex items-center justify-between">
                   <span>Switch Stream Server</span>
-                  <span className="text-[9px] font-mono text-emerald-400">● 7 Online</span>
+                  <span className="text-[9px] font-mono text-emerald-400">● {streamSources.length} Online</span>
                 </div>
 
                 {/* In-Built Proxy Toggle Banner */}

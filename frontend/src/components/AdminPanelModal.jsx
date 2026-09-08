@@ -53,8 +53,8 @@ export default function AdminPanelModal({
     cast: '',
     poster: 'https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg',
     backdrop: 'https://image.tmdb.org/t/p/original/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg',
-    streamUrl: 'https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-720p.mp4',
-    download4kUrl: 'https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-720p.mp4'
+    streamUrl: '',
+    download4kUrl: ''
   });
 
   useEffect(() => {
@@ -79,6 +79,7 @@ export default function AdminPanelModal({
       const genresArray = formData.genres.split(',').map(g => g.trim()).filter(Boolean);
       const castArray = formData.cast.split(',').map(c => c.trim()).filter(Boolean);
       const generatedImdbId = formData.imdbId || `tt${Math.floor(Math.random() * 9000000 + 1000000)}`;
+      const generatedTmdbId = formData.tmdbId ? parseInt(formData.tmdbId, 10) : Math.floor(Math.random() * 900000 + 100000);
 
       const newItem = {
         title: formData.title,
@@ -86,7 +87,7 @@ export default function AdminPanelModal({
         industry: formData.industry,
         audio: formData.audio,
         imdbId: generatedImdbId,
-        tmdbId: formData.tmdbId ? parseInt(formData.tmdbId, 10) : Math.floor(Math.random() * 900000 + 100000),
+        tmdbId: generatedTmdbId,
         tagline: formData.tagline,
         synopsis: formData.synopsis,
         releaseYear: parseInt(formData.releaseYear, 10),
@@ -102,21 +103,25 @@ export default function AdminPanelModal({
         trending: true,
         streamSources: [
           { 
-            server: "VidSrc HD Mirror (Live Embed)", 
+            server: "VidSrc Pro Cinema HD", 
             embedUrl: formData.type === 'series' 
-              ? `https://vidsrc.to/embed/tv/${generatedImdbId}/1/1`
-              : `https://vidsrc.to/embed/movie/${generatedImdbId}`, 
-            quality: "1080p / 4K Auto" 
+              ? `https://vidsrc.me/embed/tv?imdb=${generatedImdbId}&season=1&episode=1`
+              : `https://vidsrc.me/embed/movie?imdb=${generatedImdbId}`, 
+            quality: "1080p / 4K Real Movie" 
           },
           { 
-            server: "SuperEmbed VIP", 
-            embedUrl: `https://multiembed.mov/?video_id=${generatedImdbId}&tmdb=1`, 
-            quality: "Multi-Source Auto" 
+            server: "VidLink 1080p Ultra", 
+            embedUrl: formData.type === 'series'
+              ? `https://vidlink.pro/tv/${generatedTmdbId}/1/1`
+              : `https://vidlink.pro/movie/${generatedTmdbId}`, 
+            quality: "UltraFast 1080p" 
           },
           { 
-            server: "ShadowDirect HighSpeed MP4", 
-            url: formData.streamUrl, 
-            quality: "Direct HTML5 Stream" 
+            server: "2Embed Ultra HD Mirror", 
+            embedUrl: formData.type === 'series'
+              ? `https://www.2embed.cc/embedtv/${generatedImdbId}&s=1&e=1`
+              : `https://www.2embed.cc/embed/${generatedImdbId}`, 
+            quality: "1080p Web-DL" 
           }
         ],
         downloadLinks: [
