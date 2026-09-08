@@ -98,6 +98,22 @@ npm run frontend
 
 ---
 
+## 🚀 Netlify Deployment Guide
+
+ShadowPlex is configured for **1-click, zero-config deployment on Netlify**:
+
+1. Log in to [Netlify](https://app.netlify.com/) and click **"Add new site"** > **"Import an existing project"**.
+2. Connect your GitHub account and select **`SmitroniX/Shadow`**.
+3. Netlify will auto-detect the configuration from [`netlify.toml`](file:///home/ubuntu/ShadowPlex/netlify.toml):
+   - **Base directory**: `frontend`
+   - **Build command**: `npm run build`
+   - **Publish directory**: `frontend/dist` (or `dist` when base is `frontend`)
+4. Click **"Deploy Shadow"**.
+5. SPA routing (`_redirects`) and client-side catalog fallbacks ensure instant, high-speed streaming & downloading on Netlify!
+
+---
+
+
 ## 📂 Project Architecture
 
 ```

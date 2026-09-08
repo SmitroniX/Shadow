@@ -1,4 +1,27 @@
+import { defaultCatalog } from '../data/defaultCatalog';
+
 const API_BASE = '/api';
+
+// Local storage backup key for client-side persistence (e.g. Netlify static hosting)
+const LOCAL_CATALOG_KEY = 'shadowplex_local_catalog';
+
+function getLocalCatalog() {
+  try {
+    const saved = localStorage.getItem(LOCAL_CATALOG_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch (err) {
+    console.warn('Failed to parse local catalog', err);
+  }
+  return defaultCatalog;
+}
+
+function saveLocalCatalog(catalog) {
+  try {
+    localStorage.setItem(LOCAL_CATALOG_KEY, JSON.stringify(catalog));
+  } catch (err) {
+    console.warn('Failed to save to local catalog', err);
+  }
+}
 
 export async function fetchMedia({ type, genre, search, featured, trending, sort, limit } = {}) {
   try {
@@ -12,96 +35,224 @@ export async function fetchMedia({ type, genre, search, featured, trending, sort
     if (limit) params.append('limit', limit);
 
     const res = await fetch(`${API_BASE}/media?${params.toString()}`);
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    // If response is not JSON (e.g. 404 or index.html SPA fallback on Netlify static)
+    const contentType = res.headers.get('content-type');
+    if (!res.ok || !contentType || !contentType.includes('application/json')) {
+      throw new Error('API unreachable or returned non-JSON, using local fallback');
+    }
     return await res.json();
   } catch (err) {
-    console.error('Error fetching media:', err);
-    return [];
+    // Client-side fallback for Netlify & static deployments
+    let catalog = getLocalCatalog();
+
+    if (type && type !== 'all') {
+      catalog = catalog.filter(item => item.type === type);
+    }
+
+    if (genre && genre !== 'All') {
+      catalog = catalog.filter(item => 
+        item.genres && item.genres.some(g => g.toLowerCase() === genre.toLowerCase())
+      );
+    }
+
+    if (featured === 'true' || featured === true) {
+      catalog = catalog.filter(item => item.featured);
+    }
+
+    if (trending === 'true' || trending === true) {
+      catalog = catalog.filter(item => item.trending);
+    }
+
+    if (search && search.trim()) {
+      const q = search.toLowerCase().trim();
+      catalog = catalog.filter(item => 
+        item.title.toLowerCase().includes(q) ||
+        (item.synopsis && item.synopsis.toLowerCase().includes(q)) ||
+        (item.cast && item.cast.some(c => c.toLowerCase().includes(q))) ||
+        (item.director && item.director.toLowerCase().includes(q)) ||
+        (item.genres && item.genres.some(g => g.toLowerCase().includes(q)))
+      );
+    }
+
+    if (sort === 'top10') {
+      catalog = catalog.filter(item => item.top10).sort((a, b) => (a.top10 || 99) - (b.top10 || 99));
+    } else if (sort === 'rating') {
+      catalog.sort((a, b) => (b.imdb || 0) - (a.imdb || 0));
+    } else if (sort === 'year') {
+      catalog.sort((a, b) => (b.releaseYear || 0) - (a.releaseYear || 0));
+    } else if (sort === 'popular') {
+      catalog.sort((a, b) => (b.views || 0) - (a.views || 0));
+    }
+
+    if (limit) {
+      catalog = catalog.slice(0, parseInt(limit, 10));
+    }
+
+    return catalog;
   }
 }
 
 export async function fetchMediaById(id) {
   try {
     const res = await fetch(`${API_BASE}/media/${id}`);
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const contentType = res.headers.get('content-type');
+    if (!res.ok || !contentType || !contentType.includes('application/json')) {
+      throw new Error('API unreachable, using local fallback');
+    }
     return await res.json();
   } catch (err) {
-    console.error(`Error fetching media ${id}:`, err);
-    return null;
+    const catalog = getLocalCatalog();
+    return catalog.find(m => m.id === id) || null;
   }
 }
 
 export async function recordView(id) {
   try {
     const res = await fetch(`${API_BASE}/media/${id}/view`, { method: 'POST' });
-    return await res.json();
+    if (res.ok) return await res.json();
   } catch (err) {
-    console.error('Error recording view:', err);
+    // Ignore error
+  }
+  const catalog = getLocalCatalog();
+  const item = catalog.find(m => m.id === id);
+  if (item) {
+    item.views = (item.views || 0) + 1;
+    saveLocalCatalog(catalog);
+    return { views: item.views };
   }
 }
 
 export async function recordDownload(id) {
   try {
     const res = await fetch(`${API_BASE}/media/${id}/download`, { method: 'POST' });
-    return await res.json();
+    if (res.ok) return await res.json();
   } catch (err) {
-    console.error('Error recording download:', err);
+    // Ignore error
+  }
+  const catalog = getLocalCatalog();
+  const item = catalog.find(m => m.id === id);
+  if (item) {
+    item.downloads = (item.downloads || 0) + 1;
+    saveLocalCatalog(catalog);
+    return { downloads: item.downloads };
   }
 }
 
 export async function createMedia(mediaData) {
-  const res = await fetch(`${API_BASE}/media`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(mediaData),
-  });
-  if (!res.ok) throw new Error('Failed to create media');
-  return await res.json();
+  try {
+    const res = await fetch(`${API_BASE}/media`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(mediaData),
+    });
+    if (res.ok) return await res.json();
+  } catch (err) {
+    // Ignore error and fall through
+  }
+
+  // Client-side fallback for Netlify
+  const catalog = getLocalCatalog();
+  const newItem = {
+    ...mediaData,
+    id: mediaData.id || `sp-${mediaData.type === 'series' ? 'ser' : 'mov'}-${Date.now().toString().slice(-4)}`,
+    views: mediaData.views || 0,
+    downloads: mediaData.downloads || 0,
+    createdAt: new Date().toISOString()
+  };
+  catalog.unshift(newItem);
+  saveLocalCatalog(catalog);
+  return newItem;
 }
 
 export async function updateMedia(id, mediaData) {
-  const res = await fetch(`${API_BASE}/media/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(mediaData),
-  });
-  if (!res.ok) throw new Error('Failed to update media');
-  return await res.json();
+  try {
+    const res = await fetch(`${API_BASE}/media/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(mediaData),
+    });
+    if (res.ok) return await res.json();
+  } catch (err) {
+    // Fall through
+  }
+
+  const catalog = getLocalCatalog();
+  const index = catalog.findIndex(m => m.id === id);
+  if (index !== -1) {
+    catalog[index] = { ...catalog[index], ...mediaData, id };
+    saveLocalCatalog(catalog);
+    return catalog[index];
+  }
+  throw new Error('Media not found');
 }
 
 export async function deleteMedia(id) {
-  const res = await fetch(`${API_BASE}/media/${id}`, {
-    method: 'DELETE',
-  });
-  if (!res.ok) throw new Error('Failed to delete media');
-  return await res.json();
+  try {
+    const res = await fetch(`${API_BASE}/media/${id}`, { method: 'DELETE' });
+    if (res.ok) return await res.json();
+  } catch (err) {
+    // Fall through
+  }
+
+  let catalog = getLocalCatalog();
+  catalog = catalog.filter(m => m.id !== id);
+  saveLocalCatalog(catalog);
+  return { success: true, message: 'Deleted locally' };
 }
 
 export async function fetchStats() {
   try {
     const res = await fetch(`${API_BASE}/stats`);
-    if (!res.ok) throw new Error('Failed to fetch stats');
-    return await res.json();
+    const contentType = res.headers.get('content-type');
+    if (res.ok && contentType && contentType.includes('application/json')) {
+      return await res.json();
+    }
   } catch (err) {
-    return {
-      totalTitles: 0,
-      totalMovies: 0,
-      totalSeries: 0,
-      totalViews: 0,
-      totalDownloads: 0,
-      activeServers: 4,
-      systemStatus: 'Operational',
-      bandwidthServed: '0 TB'
-    };
+    // Fall through
   }
+
+  const catalog = getLocalCatalog();
+  const totalTitles = catalog.length;
+  const totalMovies = catalog.filter(m => m.type === 'movie').length;
+  const totalSeries = catalog.filter(m => m.type === 'series').length;
+  const totalViews = catalog.reduce((sum, item) => sum + (item.views || 0), 0);
+  const totalDownloads = catalog.reduce((sum, item) => sum + (item.downloads || 0), 0);
+
+  return {
+    totalTitles,
+    totalMovies,
+    totalSeries,
+    totalViews,
+    totalDownloads,
+    activeServers: 4,
+    systemStatus: 'Operational',
+    bandwidthServed: `${((totalDownloads * 3.2) / 1000).toFixed(1)} TB`
+  };
 }
 
 export async function fetchGenres() {
   try {
     const res = await fetch(`${API_BASE}/genres`);
-    if (!res.ok) throw new Error('Failed to fetch genres');
-    return await res.json();
+    const contentType = res.headers.get('content-type');
+    if (res.ok && contentType && contentType.includes('application/json')) {
+      return await res.json();
+    }
   } catch (err) {
-    return [];
+    // Fall through
   }
+
+  const catalog = getLocalCatalog();
+  const genreMap = {};
+  catalog.forEach(item => {
+    if (item.genres) {
+      item.genres.forEach(g => {
+        genreMap[g] = (genreMap[g] || 0) + 1;
+      });
+    }
+  });
+
+  return Object.keys(genreMap).map(name => ({
+    name,
+    count: genreMap[name]
+  })).sort((a, b) => b.count - a.count);
 }
