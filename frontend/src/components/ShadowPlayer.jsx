@@ -12,9 +12,10 @@ import {
   X, 
   Server, 
   SkipForward, 
-  Settings, 
   Check, 
-  Keyboard
+  Keyboard,
+  Headphones,
+  ExternalLink
 } from 'lucide-react';
 import { useWatchlist } from '../context/WatchlistContext';
 import { recordView } from '../services/api';
@@ -45,17 +46,50 @@ export default function ShadowPlayer({
   const [selectedServerIndex, setSelectedServerIndex] = useState(0);
   const [showShortcuts, setShowShortcuts] = useState(false);
 
-  // Determine current stream URL
+  // Available stream sources
   const streamSources = media.streamSources || [
-    { server: 'ShadowStream VIP (4K)', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4', quality: '4K Ultra HD' },
-    { server: 'Cloud CDN Fast (1080p)', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', quality: '1080p FHD' }
+    { 
+      server: "VidSrc 4K Server (Live Stream)", 
+      embedUrl: media.type === 'series' 
+        ? `https://vidsrc.to/embed/tv/${media.imdbId || media.tmdbId}/${episode?.seasonNumber || 1}/${episode?.episodeNumber || 1}`
+        : `https://vidsrc.to/embed/movie/${media.imdbId || media.tmdbId}`, 
+      quality: "4K / 1080p Auto" 
+    },
+    { 
+      server: "SuperEmbed HD (Dual Audio)", 
+      embedUrl: media.type === 'series'
+        ? `https://multiembed.mov/?video_id=${media.imdbId || media.tmdbId}&tmdb=1&s=${episode?.seasonNumber || 1}&e=${episode?.episodeNumber || 1}`
+        : `https://multiembed.mov/?video_id=${media.imdbId || media.tmdbId}&tmdb=1`, 
+      quality: "Multi-Audio Mirrors" 
+    },
+    { 
+      server: "VidLink Fast CDN", 
+      embedUrl: media.type === 'series'
+        ? `https://vidlink.pro/tv/${media.tmdbId}/${episode?.seasonNumber || 1}/${episode?.episodeNumber || 1}`
+        : `https://vidlink.pro/movie/${media.tmdbId}`, 
+      quality: "UltraFast 1080p" 
+    },
+    { 
+      server: "ShadowDirect HighSpeed MP4", 
+      url: episode?.streamUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4", 
+      quality: "Direct HTML5 Stream" 
+    }
   ];
 
   const currentSource = streamSources[selectedServerIndex] || streamSources[0];
-  const activeVideoUrl = episode?.streamUrl || currentSource?.url || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4';
-  const isEmbedServer = !!currentSource?.embedUrl && !episode;
+  const isEmbed = !!currentSource.embedUrl;
+  const activeVideoUrl = episode?.streamUrl || currentSource.url || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4';
 
-  // Record view on open
+  // Embed URL with episode info if series
+  const activeEmbedUrl = episode && currentSource.embedUrl 
+    ? (currentSource.embedUrl.includes('vidsrc.to') 
+        ? `https://vidsrc.to/embed/tv/${media.imdbId || media.tmdbId}/${episode.seasonNumber || 1}/${episode.episodeNumber}`
+        : currentSource.embedUrl.includes('multiembed')
+        ? `https://multiembed.mov/?video_id=${media.imdbId || media.tmdbId}&tmdb=1&s=${episode.seasonNumber || 1}&e=${episode.episodeNumber}`
+        : `https://vidlink.pro/tv/${media.tmdbId}/${episode.seasonNumber || 1}/${episode.episodeNumber}`)
+    : currentSource.embedUrl;
+
+  // Record view on mount
   useEffect(() => {
     if (media?.id) {
       recordView(media.id);
@@ -64,13 +98,14 @@ export default function ShadowPlayer({
 
   // Handle initial timestamp
   useEffect(() => {
-    if (videoRef.current && initialTime > 0) {
+    if (videoRef.current && initialTime > 0 && !isEmbed) {
       videoRef.current.currentTime = initialTime;
     }
-  }, [initialTime]);
+  }, [initialTime, isEmbed]);
 
   // Periodic progress tracker
   useEffect(() => {
+    if (isEmbed) return;
     const interval = setInterval(() => {
       if (videoRef.current && !videoRef.current.paused) {
         updateProgress(
@@ -87,9 +122,9 @@ export default function ShadowPlayer({
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [media, episode, updateProgress]);
+  }, [media, episode, updateProgress, isEmbed]);
 
-  // Auto-hide controls after inactivity
+  // Auto-hide controls
   const handleMouseMove = () => {
     setShowControls(true);
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
@@ -110,30 +145,42 @@ export default function ShadowPlayer({
       switch (e.code) {
         case 'Space':
         case 'KeyK':
-          e.preventDefault();
-          togglePlay();
+          if (!isEmbed) {
+            e.preventDefault();
+            togglePlay();
+          }
           break;
         case 'ArrowLeft':
         case 'KeyJ':
-          e.preventDefault();
-          skip(-10);
+          if (!isEmbed) {
+            e.preventDefault();
+            skip(-10);
+          }
           break;
         case 'ArrowRight':
         case 'KeyL':
-          e.preventDefault();
-          skip(10);
+          if (!isEmbed) {
+            e.preventDefault();
+            skip(10);
+          }
           break;
         case 'ArrowUp':
-          e.preventDefault();
-          setVolumeLevel(Math.min(1, volume + 0.1));
+          if (!isEmbed) {
+            e.preventDefault();
+            setVolumeLevel(Math.min(1, volume + 0.1));
+          }
           break;
         case 'ArrowDown':
-          e.preventDefault();
-          setVolumeLevel(Math.max(0, volume - 0.1));
+          if (!isEmbed) {
+            e.preventDefault();
+            setVolumeLevel(Math.max(0, volume - 0.1));
+          }
           break;
         case 'KeyM':
-          e.preventDefault();
-          toggleMute();
+          if (!isEmbed) {
+            e.preventDefault();
+            toggleMute();
+          }
           break;
         case 'KeyF':
           e.preventDefault();
@@ -153,7 +200,7 @@ export default function ShadowPlayer({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPlaying, volume, isMuted, isFullscreen]);
+  }, [isPlaying, volume, isMuted, isFullscreen, isEmbed]);
 
   const togglePlay = () => {
     if (!videoRef.current) return;
@@ -235,14 +282,14 @@ export default function ShadowPlayer({
       onMouseMove={handleMouseMove}
       className="fixed inset-0 z-50 bg-black flex items-center justify-center select-none overflow-hidden"
     >
-      {/* Video Element or Embed Iframe */}
-      {isEmbedServer ? (
+      {/* Video Content: Embed Iframe or Direct Player */}
+      {isEmbed ? (
         <iframe
-          src={currentSource.embedUrl}
+          src={activeEmbedUrl}
           className="w-full h-full border-0"
           allowFullScreen
           allow="autoplay; encrypted-media; picture-in-picture"
-          title="Streaming Mirror"
+          title={`${media.title} Stream`}
         />
       ) : (
         <video
@@ -261,51 +308,56 @@ export default function ShadowPlayer({
         />
       )}
 
-      {/* Center Play Button Overlay on Pause */}
-      {!isPlaying && !isEmbedServer && (
+      {/* Center Play Button Overlay on Pause for Direct Video */}
+      {!isPlaying && !isEmbed && (
         <div 
           onClick={togglePlay}
           className="absolute inset-0 flex items-center justify-center bg-black/40 cursor-pointer"
         >
-          <div className="w-20 h-20 rounded-full bg-gradient-to-r from-purple-600 to-cyan-500 text-white flex items-center justify-center shadow-2xl shadow-purple-600/50 hover:scale-110 active:scale-95 transition-transform">
-            <Play className="w-10 h-10 fill-white ml-1.5" />
+          <div className="w-20 h-20 rounded-full bg-white text-black flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-transform">
+            <Play className="w-10 h-10 fill-black ml-1" />
           </div>
         </div>
       )}
 
       {/* Top Bar Controls */}
-      <div className={`absolute top-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-b from-black/90 via-black/50 to-transparent flex items-center justify-between transition-opacity duration-300 ${
+      <div className={`absolute top-0 left-0 right-0 p-4 sm:p-5 bg-gradient-to-b from-black/90 via-black/60 to-transparent flex items-center justify-between transition-opacity duration-300 z-30 ${
         showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
       }`}>
         <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-[#e50914] animate-pulse" />
           <div>
-            <h2 className="text-white font-bold text-base sm:text-lg drop-shadow-md">
-              {media.title}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-white font-bold text-base sm:text-lg drop-shadow-md">
+                {media.title}
+              </h2>
+              <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-white/10 text-gray-300 border border-white/10">
+                {media.industry}
+              </span>
+            </div>
             {episode && (
-              <p className="text-cyan-300 text-xs font-mono drop-shadow">
+              <p className="text-gray-300 text-xs font-mono drop-shadow">
                 S{episode.seasonNumber || 1} • E{episode.episodeNumber}: {episode.title}
               </p>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           {/* Server Switcher */}
           <div className="relative">
             <button
               onClick={() => setShowServerMenu(!showServerMenu)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold text-gray-200 border border-white/10 transition-colors backdrop-blur-md"
             >
-              <Server className="w-3.5 h-3.5 text-purple-400" />
+              <Server className="w-3.5 h-3.5 text-[#e50914]" />
               <span>{currentSource.server}</span>
             </button>
 
             {showServerMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-[#13141f] border border-white/10 rounded-xl shadow-2xl py-1 z-50 glass-dropdown">
+              <div className="absolute right-0 mt-2 w-64 bg-[#11131c] border border-white/10 rounded-xl shadow-2xl py-1 z-50 glass-dropdown">
                 <div className="px-3 py-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-white/5">
-                  Select Streaming Server
+                  Select Stream Mirror
                 </div>
                 {streamSources.map((src, idx) => (
                   <button
@@ -315,14 +367,14 @@ export default function ShadowPlayer({
                       setShowServerMenu(false);
                     }}
                     className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-white/10 ${
-                      selectedServerIndex === idx ? 'text-cyan-400 font-bold bg-white/5' : 'text-gray-300'
+                      selectedServerIndex === idx ? 'text-[#e50914] font-bold bg-white/5' : 'text-gray-300'
                     }`}
                   >
                     <div>
                       <div>{src.server}</div>
                       <div className="text-[10px] text-gray-500 font-mono">{src.quality}</div>
                     </div>
-                    {selectedServerIndex === idx && <Check className="w-4 h-4 text-cyan-400" />}
+                    {selectedServerIndex === idx && <Check className="w-4 h-4 text-[#e50914]" />}
                   </button>
                 ))}
               </div>
@@ -341,7 +393,7 @@ export default function ShadowPlayer({
           {/* Close Player */}
           <button
             onClick={onClose}
-            className="p-2 rounded-full bg-white/10 hover:bg-red-600/80 text-white transition-colors"
+            className="p-2 rounded-full bg-white/10 hover:bg-[#e50914] text-white transition-colors"
             title="Exit Player (Esc)"
           >
             <X className="w-5 h-5" />
@@ -351,8 +403,8 @@ export default function ShadowPlayer({
 
       {/* Keyboard Shortcuts Modal */}
       {showShortcuts && (
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#12131e] border border-white/15 rounded-2xl max-w-sm w-full p-5 shadow-2xl text-left space-y-3">
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#12141d] border border-white/15 rounded-2xl max-w-sm w-full p-5 shadow-2xl text-left space-y-3">
             <div className="flex items-center justify-between border-b border-white/10 pb-2">
               <h3 className="font-bold text-white text-base">Cinema Player Shortcuts</h3>
               <button onClick={() => setShowShortcuts(false)} className="text-gray-400 hover:text-white">
@@ -370,7 +422,7 @@ export default function ShadowPlayer({
             </div>
             <button
               onClick={() => setShowShortcuts(false)}
-              className="w-full mt-2 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 font-bold text-xs text-white"
+              className="w-full mt-2 py-2 rounded-xl bg-[#e50914] font-bold text-xs text-white"
             >
               Got it
             </button>
@@ -378,9 +430,9 @@ export default function ShadowPlayer({
         </div>
       )}
 
-      {/* Bottom Controls Bar */}
-      {!isEmbedServer && (
-        <div className={`absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/95 via-black/70 to-transparent transition-opacity duration-300 ${
+      {/* Bottom Controls Bar (for Direct Stream) */}
+      {!isEmbed && (
+        <div className={`absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/95 via-black/70 to-transparent transition-opacity duration-300 z-30 ${
           showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}>
           
@@ -392,28 +444,26 @@ export default function ShadowPlayer({
               max="100"
               value={progressPercent || 0}
               onChange={handleSeek}
-              className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-cyan-400 hover:h-2.5 transition-all"
+              className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#e50914] hover:h-2 transition-all"
             />
-            {/* Filled bar track */}
+            {/* Filled track */}
             <div 
-              className="absolute top-0 left-0 h-1.5 rounded-lg bg-gradient-to-r from-purple-500 to-cyan-400 pointer-events-none group-hover/seek:h-2.5 transition-all"
+              className="absolute top-0 left-0 h-1 rounded-lg bg-[#e50914] pointer-events-none group-hover/seek:h-2 transition-all"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
 
           <div className="flex items-center justify-between">
-            {/* Left Controls: Play, Skip, Volume, Time */}
+            {/* Left Controls */}
             <div className="flex items-center gap-3 sm:gap-4">
-              {/* Play / Pause */}
               <button
                 onClick={togglePlay}
-                className="p-2 text-white hover:text-cyan-400 transition-colors"
+                className="p-2 text-white hover:text-[#e50914] transition-colors"
                 title={isPlaying ? "Pause (Space)" : "Play (Space)"}
               >
                 {isPlaying ? <Pause className="w-5 h-5 fill-white" /> : <Play className="w-5 h-5 fill-white" />}
               </button>
 
-              {/* 10s Rewind */}
               <button
                 onClick={() => skip(-10)}
                 className="p-1.5 text-gray-300 hover:text-white transition-colors"
@@ -422,7 +472,6 @@ export default function ShadowPlayer({
                 <RotateCcw className="w-4 h-4" />
               </button>
 
-              {/* 10s Forward */}
               <button
                 onClick={() => skip(10)}
                 className="p-1.5 text-gray-300 hover:text-white transition-colors"
@@ -431,7 +480,6 @@ export default function ShadowPlayer({
                 <RotateCw className="w-4 h-4" />
               </button>
 
-              {/* Next Episode button (if available) */}
               {onPlayNextEpisode && (
                 <button
                   onClick={onPlayNextEpisode}
@@ -439,7 +487,7 @@ export default function ShadowPlayer({
                   title="Next Episode"
                 >
                   <SkipForward className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Next</span>
+                  <span className="hidden sm:inline">Next Episode</span>
                 </button>
               )}
 
@@ -451,7 +499,7 @@ export default function ShadowPlayer({
                   title="Mute (M)"
                 >
                   {isMuted || volume === 0 ? (
-                    <VolumeX className="w-5 h-5 text-red-400" />
+                    <VolumeX className="w-5 h-5 text-red-500" />
                   ) : volume < 0.5 ? (
                     <Volume1 className="w-5 h-5" />
                   ) : (
@@ -466,7 +514,7 @@ export default function ShadowPlayer({
                   step="0.05"
                   value={isMuted ? 0 : volume}
                   onChange={(e) => setVolumeLevel(parseFloat(e.target.value))}
-                  className="w-16 sm:w-20 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                  className="w-16 sm:w-20 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#e50914]"
                 />
               </div>
 
@@ -478,15 +526,13 @@ export default function ShadowPlayer({
               </div>
             </div>
 
-            {/* Right Controls: Quality, Speed, Fullscreen */}
+            {/* Right Controls */}
             <div className="flex items-center gap-3">
-              
-              {/* Quality indicator pill */}
-              <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-bold font-mono text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 rounded">
+              <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-bold font-mono text-amber-400 bg-amber-950/60 border border-amber-500/30 rounded">
                 4K HDR
               </span>
 
-              {/* Playback Speed Menu */}
+              {/* Speed Menu */}
               <div className="relative">
                 <button
                   onClick={() => setShowSpeedMenu(!showSpeedMenu)}
@@ -497,14 +543,14 @@ export default function ShadowPlayer({
                 </button>
 
                 {showSpeedMenu && (
-                  <div className="absolute bottom-10 right-0 w-28 bg-[#13141f] border border-white/10 rounded-xl shadow-2xl py-1 glass-dropdown">
+                  <div className="absolute bottom-10 right-0 w-28 bg-[#11131c] border border-white/10 rounded-xl shadow-2xl py-1 glass-dropdown">
                     <div className="px-3 py-1 text-[10px] text-gray-400 font-bold uppercase">Speed</div>
                     {[0.5, 0.75, 1, 1.25, 1.5, 2].map(spd => (
                       <button
                         key={spd}
                         onClick={() => setSpeed(spd)}
                         className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between hover:bg-white/10 ${
-                          playbackSpeed === spd ? 'text-cyan-400 font-bold' : 'text-gray-300'
+                          playbackSpeed === spd ? 'text-[#e50914] font-bold' : 'text-gray-300'
                         }`}
                       >
                         <span>{spd}x</span>

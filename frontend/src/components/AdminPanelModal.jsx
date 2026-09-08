@@ -9,11 +9,10 @@ import {
   Film, 
   Tv, 
   Server, 
-  Activity, 
   Save, 
-  Sparkles,
-  HardDrive,
-  Database
+  Database,
+  Search,
+  Sparkles
 } from 'lucide-react';
 import { fetchStats, createMedia, deleteMedia } from '../services/api';
 
@@ -39,20 +38,23 @@ export default function AdminPanelModal({
   const [formData, setFormData] = useState({
     title: '',
     type: 'movie',
+    industry: 'Bollywood',
+    audio: 'Dual Audio [Hindi + English]',
+    imdbId: '',
+    tmdbId: '',
     tagline: '',
     synopsis: '',
-    releaseYear: 2025,
-    rating: 'PG-13',
-    imdb: 8.5,
-    duration: '2h 15m',
-    genres: 'Sci-Fi, Action',
+    releaseYear: 2024,
+    rating: 'UA / 16+',
+    imdb: 8.2,
+    duration: '2h 30m',
+    genres: 'Action, Thriller',
     director: '',
     cast: '',
-    poster: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600&auto=format&fit=crop&q=80',
-    backdrop: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1600&auto=format&fit=crop&q=80',
-    streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    download4kUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    download1080pUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
+    poster: 'https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg',
+    backdrop: 'https://image.tmdb.org/t/p/original/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg',
+    streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+    download4kUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4'
   });
 
   useEffect(() => {
@@ -76,10 +78,15 @@ export default function AdminPanelModal({
     try {
       const genresArray = formData.genres.split(',').map(g => g.trim()).filter(Boolean);
       const castArray = formData.cast.split(',').map(c => c.trim()).filter(Boolean);
+      const generatedImdbId = formData.imdbId || `tt${Math.floor(Math.random() * 9000000 + 1000000)}`;
 
       const newItem = {
         title: formData.title,
         type: formData.type,
+        industry: formData.industry,
+        audio: formData.audio,
+        imdbId: generatedImdbId,
+        tmdbId: formData.tmdbId ? parseInt(formData.tmdbId, 10) : Math.floor(Math.random() * 900000 + 100000),
         tagline: formData.tagline,
         synopsis: formData.synopsis,
         releaseYear: parseInt(formData.releaseYear, 10),
@@ -94,13 +101,46 @@ export default function AdminPanelModal({
         featured: false,
         trending: true,
         streamSources: [
-          { server: 'ShadowStream VIP (4K)', url: formData.streamUrl, quality: '4K Ultra HD' },
-          { server: 'Cloud CDN Fast (1080p)', url: formData.streamUrl, quality: '1080p FHD' }
+          { 
+            server: "VidSrc HD Mirror (Live Embed)", 
+            embedUrl: formData.type === 'series' 
+              ? `https://vidsrc.to/embed/tv/${generatedImdbId}/1/1`
+              : `https://vidsrc.to/embed/movie/${generatedImdbId}`, 
+            quality: "1080p / 4K Auto" 
+          },
+          { 
+            server: "SuperEmbed VIP", 
+            embedUrl: `https://multiembed.mov/?video_id=${generatedImdbId}&tmdb=1`, 
+            quality: "Multi-Source Auto" 
+          },
+          { 
+            server: "ShadowDirect HighSpeed MP4", 
+            url: formData.streamUrl, 
+            quality: "Direct HTML5 Stream" 
+          }
         ],
         downloadLinks: [
-          { quality: '4K 2160p HDR', size: '12.4 GB', codec: 'x265 10-bit', server: 'ShadowPlex HighSpeed #1', url: formData.download4kUrl },
-          { quality: '1080p Full HD', size: '3.6 GB', codec: 'H.264 Bluray', server: 'Fast Cloud Mirror #2', url: formData.download1080pUrl },
-          { quality: '720p HD', size: '1.2 GB', codec: 'x264 Web-DL', server: 'Mega Server #3', url: formData.download1080pUrl }
+          { 
+            quality: "4K 2160p HDR (Dual Audio)", 
+            size: "14.8 GB", 
+            codec: "HEVC 10-bit Atmos", 
+            server: "ShadowFast VIP Cloud", 
+            url: formData.download4kUrl 
+          },
+          { 
+            quality: "1080p Full HD Bluray", 
+            size: "3.6 GB", 
+            codec: "H.264 DD+ 5.1", 
+            server: "Google Drive HighSpeed Mirror", 
+            url: formData.download4kUrl 
+          },
+          { 
+            quality: "720p HD Dual Audio", 
+            size: "1.4 GB", 
+            codec: "x264 Web-DL", 
+            server: "Mega HighSpeed Mirror", 
+            url: formData.download4kUrl 
+          }
         ]
       };
 
@@ -112,29 +152,20 @@ export default function AdminPanelModal({
             episodesCount: 2,
             batchDownload: {
               size: '4.8 GB',
-              quality: '1080p Complete Season',
+              quality: '1080p Complete Season Pack (Dual Audio)',
               url: formData.streamUrl
             },
             episodes: [
               {
                 episodeNumber: 1,
                 title: 'Episode 1: Pilot',
-                duration: '50m',
-                overview: 'The beginning of the thrilling journey.',
+                duration: '52m',
+                overview: 'The opening episode of the thrilling series.',
                 thumbnail: formData.backdrop,
                 streamUrl: formData.streamUrl,
+                embedUrl: `https://vidsrc.to/embed/tv/${generatedImdbId}/1/1`,
                 downloadUrl: formData.streamUrl,
                 size: '1.4 GB'
-              },
-              {
-                episodeNumber: 2,
-                title: 'Episode 2: The Horizon',
-                duration: '54m',
-                overview: 'The investigation deepens as consequences unfold.',
-                thumbnail: formData.backdrop,
-                streamUrl: formData.streamUrl,
-                downloadUrl: formData.streamUrl,
-                size: '1.5 GB'
               }
             ]
           }
@@ -142,7 +173,7 @@ export default function AdminPanelModal({
       }
 
       await createMedia(newItem);
-      setMessage('New title added successfully to ShadowPlex catalog!');
+      setMessage(`Added "${formData.title}" (${formData.industry}) to ShadowPlex!`);
       setLoading(false);
       setViewTab('list');
       if (onMediaUpdated) onMediaUpdated();
@@ -167,25 +198,25 @@ export default function AdminPanelModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-fadeIn">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-fadeIn">
       
       {/* Container */}
-      <div className="relative w-full max-w-5xl bg-[#0d0e17] border border-white/10 rounded-2xl overflow-hidden shadow-2xl my-auto flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-5xl bg-[#0f1118] border border-white/10 rounded-2xl overflow-hidden shadow-2xl my-auto flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="p-5 border-b border-white/10 flex items-center justify-between bg-[#11121d]">
+        <div className="p-5 border-b border-white/10 flex items-center justify-between bg-[#13151f]">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400">
-              <ShieldCheck className="w-6 h-6" />
+            <div className="p-2 rounded-xl bg-[#e50914] text-white">
+              <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                ShadowPlex Admin CMS & Operations
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/30">
-                  v2.5 Pro
+                ShadowPlex Admin Management
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 text-gray-300">
+                  v3.0 Real Media
                 </span>
               </h2>
-              <p className="text-xs text-gray-400">Manage stream sources, download mirrors, and catalog entries</p>
+              <p className="text-xs text-gray-400">Manage real Bollywood & Hollywood titles, IMDb metadata, and mirrors</p>
             </div>
           </div>
 
@@ -198,11 +229,11 @@ export default function AdminPanelModal({
         </div>
 
         {/* Stats Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 bg-[#0a0b12] border-b border-white/5">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 bg-[#0c0d14] border-b border-white/5">
           <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
             <div className="flex items-center justify-between text-gray-400 text-xs">
-              <span>Catalog Titles</span>
-              <Database className="w-3.5 h-3.5 text-purple-400" />
+              <span>Total Catalog</span>
+              <Database className="w-3.5 h-3.5 text-gray-300" />
             </div>
             <div className="text-lg font-bold text-white mt-1">{stats.totalTitles || mediaList.length}</div>
           </div>
@@ -210,7 +241,7 @@ export default function AdminPanelModal({
           <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
             <div className="flex items-center justify-between text-gray-400 text-xs">
               <span>Movies / Series</span>
-              <Film className="w-3.5 h-3.5 text-cyan-400" />
+              <Film className="w-3.5 h-3.5 text-blue-400" />
             </div>
             <div className="text-lg font-bold text-white mt-1">
               {stats.totalMovies || 0} / {stats.totalSeries || 0}
@@ -219,7 +250,7 @@ export default function AdminPanelModal({
 
           <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
             <div className="flex items-center justify-between text-gray-400 text-xs">
-              <span>Total Streams</span>
+              <span>Streams Served</span>
               <Eye className="w-3.5 h-3.5 text-emerald-400" />
             </div>
             <div className="text-lg font-bold text-emerald-400 mt-1">
@@ -230,9 +261,9 @@ export default function AdminPanelModal({
           <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
             <div className="flex items-center justify-between text-gray-400 text-xs">
               <span>Downloads</span>
-              <Download className="w-3.5 h-3.5 text-yellow-400" />
+              <Download className="w-3.5 h-3.5 text-amber-400" />
             </div>
-            <div className="text-lg font-bold text-yellow-400 mt-1">
+            <div className="text-lg font-bold text-amber-400 mt-1">
               {(stats.totalDownloads || 0).toLocaleString()}
             </div>
           </div>
@@ -240,35 +271,35 @@ export default function AdminPanelModal({
           <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 col-span-2 sm:col-span-1">
             <div className="flex items-center justify-between text-gray-400 text-xs">
               <span>Bandwidth</span>
-              <HardDrive className="w-3.5 h-3.5 text-indigo-400" />
+              <Server className="w-3.5 h-3.5 text-purple-400" />
             </div>
             <div className="text-lg font-bold text-white mt-1">{stats.bandwidthServed || '0 TB'}</div>
           </div>
         </div>
 
         {/* Tab Toggle Navigation */}
-        <div className="flex items-center gap-3 px-6 py-3 border-b border-white/10 bg-[#0f101c]">
+        <div className="flex items-center gap-3 px-6 py-3 border-b border-white/10 bg-[#11131c]">
           <button
             onClick={() => setViewTab('list')}
             className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
               viewTab === 'list'
-                ? 'bg-purple-600 text-white shadow-md'
+                ? 'bg-white text-black shadow-md'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            Manage Catalog ({mediaList.length})
+            Manage Titles ({mediaList.length})
           </button>
 
           <button
             onClick={() => setViewTab('add')}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
               viewTab === 'add'
-                ? 'bg-purple-600 text-white shadow-md'
+                ? 'bg-white text-black shadow-md'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Add New Movie / Series</span>
+            <span>Add Hollywood / Bollywood Title</span>
           </button>
 
           {message && (
@@ -288,12 +319,12 @@ export default function AdminPanelModal({
                 <table className="w-full text-left text-xs">
                   <thead className="text-gray-400 uppercase bg-white/[0.02] border-b border-white/5">
                     <tr>
-                      <th className="p-3">Title</th>
+                      <th className="p-3">Title & Poster</th>
+                      <th className="p-3">Industry</th>
                       <th className="p-3">Type</th>
                       <th className="p-3">Year</th>
-                      <th className="p-3">Rating</th>
-                      <th className="p-3">Views</th>
-                      <th className="p-3">Downloads</th>
+                      <th className="p-3">IMDb</th>
+                      <th className="p-3">Audio Track</th>
                       <th className="p-3 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -309,15 +340,15 @@ export default function AdminPanelModal({
                         </td>
                         <td className="p-3">
                           <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
-                            item.type === 'series' ? 'bg-purple-950 text-purple-300' : 'bg-cyan-950 text-cyan-300'
+                            item.industry === 'Bollywood' ? 'bg-amber-950 text-amber-300' : 'bg-blue-950 text-blue-300'
                           }`}>
-                            {item.type}
+                            {item.industry}
                           </span>
                         </td>
+                        <td className="p-3 text-gray-300 uppercase text-[10px] font-bold">{item.type}</td>
                         <td className="p-3 text-gray-300">{item.releaseYear}</td>
                         <td className="p-3 text-amber-400 font-bold">⭐ {item.imdb}</td>
-                        <td className="p-3 text-gray-300 font-mono">{(item.views || 0).toLocaleString()}</td>
-                        <td className="p-3 text-gray-300 font-mono">{(item.downloads || 0).toLocaleString()}</td>
+                        <td className="p-3 text-emerald-400 text-[11px]">{item.audio?.includes('Dual') ? 'Dual Audio' : 'Hindi 5.1'}</td>
                         <td className="p-3 text-right">
                           <button
                             onClick={() => handleDelete(item.id, item.title)}
@@ -340,49 +371,74 @@ export default function AdminPanelModal({
             <form onSubmit={handleSubmit} className="space-y-4 max-w-3xl mx-auto">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-gray-300 mb-1">Title *</label>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">Movie / Series Title *</label>
                   <input
                     type="text"
                     required
                     value={formData.title}
                     onChange={e => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="e.g. Interstellar 2: Beyond Stars"
-                    className="w-full bg-[#161726] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-purple-500"
+                    placeholder="e.g. Inception or War 2"
+                    className="w-full bg-[#161824] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-[#e50914]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-1">Content Type</label>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">Industry</label>
+                  <select
+                    value={formData.industry}
+                    onChange={e => setFormData({ ...formData, industry: e.target.value })}
+                    className="w-full bg-[#161824] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-[#e50914]"
+                  >
+                    <option value="Bollywood">Bollywood 🇮🇳</option>
+                    <option value="Hollywood">Hollywood 🇺🇸</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">Type</label>
                   <select
                     value={formData.type}
                     onChange={e => setFormData({ ...formData, type: e.target.value })}
-                    className="w-full bg-[#161726] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-purple-500"
+                    className="w-full bg-[#161824] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-[#e50914]"
                   >
                     <option value="movie">Movie</option>
                     <option value="series">Web Series</option>
                   </select>
                 </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">IMDb ID (e.g. tt15398776)</label>
+                  <input
+                    type="text"
+                    value={formData.imdbId}
+                    onChange={e => setFormData({ ...formData, imdbId: e.target.value })}
+                    placeholder="tt15398776"
+                    className="w-full bg-[#161824] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-[#e50914]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">Audio Track</label>
+                  <input
+                    type="text"
+                    value={formData.audio}
+                    onChange={e => setFormData({ ...formData, audio: e.target.value })}
+                    placeholder="Dual Audio [Hindi + English]"
+                    className="w-full bg-[#161824] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-[#e50914]"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1">Tagline</label>
-                <input
-                  type="text"
-                  value={formData.tagline}
-                  onChange={e => setFormData({ ...formData, tagline: e.target.value })}
-                  placeholder="e.g. Beyond the known universe lies humanity's destiny"
-                  className="w-full bg-[#161726] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-purple-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1">Synopsis / Overview</label>
+                <label className="block text-xs font-semibold text-gray-300 mb-1">Synopsis / Storyline</label>
                 <textarea
                   rows={3}
                   value={formData.synopsis}
                   onChange={e => setFormData({ ...formData, synopsis: e.target.value })}
-                  placeholder="Detailed synopsis of the movie or web series..."
-                  className="w-full bg-[#161726] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-purple-500"
+                  placeholder="Official storyline from IMDb/TMDB..."
+                  className="w-full bg-[#161824] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-[#e50914]"
                 />
               </div>
 
@@ -393,7 +449,7 @@ export default function AdminPanelModal({
                     type="number"
                     value={formData.releaseYear}
                     onChange={e => setFormData({ ...formData, releaseYear: e.target.value })}
-                    className="w-full bg-[#161726] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                    className="w-full bg-[#161824] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
                   />
                 </div>
 
@@ -406,7 +462,7 @@ export default function AdminPanelModal({
                     max="10"
                     value={formData.imdb}
                     onChange={e => setFormData({ ...formData, imdb: e.target.value })}
-                    className="w-full bg-[#161726] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                    className="w-full bg-[#161824] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
                   />
                 </div>
 
@@ -416,8 +472,8 @@ export default function AdminPanelModal({
                     type="text"
                     value={formData.rating}
                     onChange={e => setFormData({ ...formData, rating: e.target.value })}
-                    placeholder="PG-13, R, TV-MA"
-                    className="w-full bg-[#161726] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                    placeholder="UA / 16+, PG-13, R"
+                    className="w-full bg-[#161824] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
                   />
                 </div>
 
@@ -427,8 +483,8 @@ export default function AdminPanelModal({
                     type="text"
                     value={formData.duration}
                     onChange={e => setFormData({ ...formData, duration: e.target.value })}
-                    placeholder="2h 15m or 2 Seasons"
-                    className="w-full bg-[#161726] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                    placeholder="2h 45m or 1 Season"
+                    className="w-full bg-[#161824] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
                   />
                 </div>
               </div>
@@ -440,19 +496,19 @@ export default function AdminPanelModal({
                     type="text"
                     value={formData.genres}
                     onChange={e => setFormData({ ...formData, genres: e.target.value })}
-                    placeholder="Sci-Fi, Action, Thriller"
-                    className="w-full bg-[#161726] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                    placeholder="Action, Sci-Fi, Thriller"
+                    className="w-full bg-[#161824] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-1">Director</label>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">Director / Creator</label>
                   <input
                     type="text"
                     value={formData.director}
                     onChange={e => setFormData({ ...formData, director: e.target.value })}
-                    placeholder="e.g. Christopher Nolan"
-                    className="w-full bg-[#161726] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                    placeholder="e.g. Christopher Nolan or Rajkumar Hirani"
+                    className="w-full bg-[#161824] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
                   />
                 </div>
               </div>
@@ -463,19 +519,19 @@ export default function AdminPanelModal({
                   type="text"
                   value={formData.cast}
                   onChange={e => setFormData({ ...formData, cast: e.target.value })}
-                  placeholder="e.g. Cillian Murphy, Florence Pugh, Pedro Pascal"
-                  className="w-full bg-[#161726] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                  placeholder="e.g. Shah Rukh Khan, Deepika Padukone, Cillian Murphy"
+                  className="w-full bg-[#161824] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-1">Poster Image URL</label>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">Poster Image URL (TMDB / IMDb)</label>
                   <input
                     type="url"
                     value={formData.poster}
                     onChange={e => setFormData({ ...formData, poster: e.target.value })}
-                    className="w-full bg-[#161726] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                    className="w-full bg-[#161824] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
                   />
                 </div>
 
@@ -485,46 +541,8 @@ export default function AdminPanelModal({
                     type="url"
                     value={formData.backdrop}
                     onChange={e => setFormData({ ...formData, backdrop: e.target.value })}
-                    className="w-full bg-[#161726] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                    className="w-full bg-[#161824] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
                   />
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-purple-950/20 border border-purple-500/20 space-y-3">
-                <h4 className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
-                  <Server className="w-4 h-4" />
-                  Streaming & Download Source Links
-                </h4>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-gray-300 mb-1">Stream Video URL (MP4/HLS)</label>
-                  <input
-                    type="url"
-                    value={formData.streamUrl}
-                    onChange={e => setFormData({ ...formData, streamUrl: e.target.value })}
-                    className="w-full bg-[#12131e] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white font-mono"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-gray-300 mb-1">4K Download Link</label>
-                    <input
-                      type="url"
-                      value={formData.download4kUrl}
-                      onChange={e => setFormData({ ...formData, download4kUrl: e.target.value })}
-                      className="w-full bg-[#12131e] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-gray-300 mb-1">1080p Download Link</label>
-                    <input
-                      type="url"
-                      value={formData.download1080pUrl}
-                      onChange={e => setFormData({ ...formData, download1080pUrl: e.target.value })}
-                      className="w-full bg-[#12131e] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white font-mono"
-                    />
-                  </div>
                 </div>
               </div>
 
@@ -532,7 +550,7 @@ export default function AdminPanelModal({
                 <button
                   type="button"
                   onClick={() => setViewTab('list')}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-300 hover:bg-white/5"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-white"
                 >
                   Cancel
                 </button>
@@ -540,10 +558,10 @@ export default function AdminPanelModal({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all disabled:opacity-50"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#e50914] hover:bg-red-700 text-white font-bold text-xs shadow-lg transition-all disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
-                  <span>{loading ? 'Publishing...' : 'Publish to ShadowPlex'}</span>
+                  <span>{loading ? 'Adding...' : 'Save & Publish Title'}</span>
                 </button>
               </div>
             </form>

@@ -22,18 +22,18 @@ export default function MediaRow({
   };
 
   return (
-    <div className="relative group/row my-8">
+    <div className="relative group/row my-7">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="flex items-center justify-between mb-3 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-1.5 h-5 rounded-full bg-purple-500" />
-            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-4 rounded-full bg-[#e50914]" />
+            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
               {title}
             </h2>
           </div>
           {subtitle && (
-            <p className="text-xs text-gray-400 mt-0.5 ml-4">
+            <p className="text-xs text-gray-400 mt-0.5 ml-3">
               {subtitle}
             </p>
           )}
@@ -45,18 +45,18 @@ export default function MediaRow({
         {/* Left Arrow */}
         <button
           onClick={() => scroll('left')}
-          className="absolute left-1 sm:left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/70 hover:bg-purple-600 text-white border border-white/10 flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all shadow-xl hover:scale-110"
+          className="absolute left-1 sm:left-4 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full bg-black/80 hover:bg-[#e50914] text-white border border-white/10 flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all shadow-xl"
         >
-          <ChevronLeft className="w-6 h-6" />
+          <ChevronLeft className="w-5 h-5" />
         </button>
 
         {/* Carousel Container */}
         <div 
           ref={rowRef}
-          className="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth py-2"
+          className="flex gap-3.5 overflow-x-auto no-scrollbar scroll-smooth py-2"
         >
           {items.map(item => (
-            <div key={item.id} className="w-40 sm:w-48 md:w-52 flex-shrink-0">
+            <div key={item.id} className="w-36 sm:w-44 md:w-48 flex-shrink-0">
               <MediaCard
                 media={item}
                 onPlay={onPlay}
@@ -70,9 +70,9 @@ export default function MediaRow({
         {/* Right Arrow */}
         <button
           onClick={() => scroll('right')}
-          className="absolute right-1 sm:right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/70 hover:bg-purple-600 text-white border border-white/10 flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all shadow-xl hover:scale-110"
+          className="absolute right-1 sm:right-4 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full bg-black/80 hover:bg-[#e50914] text-white border border-white/10 flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-all shadow-xl"
         >
-          <ChevronRight className="w-6 h-6" />
+          <ChevronRight className="w-5 h-5" />
         </button>
       </div>
     </div>

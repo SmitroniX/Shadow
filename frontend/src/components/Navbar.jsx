@@ -9,7 +9,9 @@ import {
   ShieldCheck, 
   Flame, 
   Menu, 
-  X 
+  X,
+  Globe2,
+  Sparkles
 } from 'lucide-react';
 import { useDownloads } from '../context/DownloadContext';
 import { useWatchlist } from '../context/WatchlistContext';
@@ -17,6 +19,8 @@ import { useWatchlist } from '../context/WatchlistContext';
 export default function Navbar({ 
   currentTab, 
   setCurrentTab, 
+  industryFilter,
+  setIndustryFilter,
   onOpenSearch, 
   onOpenAdmin 
 }) {
@@ -34,58 +38,73 @@ export default function Navbar({
   }, []);
 
   const navItems = [
-    { id: 'all', label: 'Home', icon: Flame },
-    { id: 'movie', label: 'Movies', icon: Film },
-    { id: 'series', label: 'Web Series', icon: Tv },
-    { id: 'top10', label: 'Top 10', icon: Flame },
-    { id: 'watchlist', label: `Watchlist (${watchlist.length})`, icon: Bookmark },
+    { id: 'all', label: 'Home' },
+    { id: 'bollywood', label: 'Bollywood 🇮🇳', filter: 'Bollywood' },
+    { id: 'hollywood', label: 'Hollywood 🇺🇸', filter: 'Hollywood' },
+    { id: 'movie', label: 'Movies' },
+    { id: 'series', label: 'Web Series' },
+    { id: 'top10', label: 'Top 10 IMDb' },
+    { id: 'watchlist', label: `Watchlist (${watchlist.length})` },
   ];
+
+  const handleNavClick = (item) => {
+    if (item.id === 'bollywood') {
+      setCurrentTab('movie');
+      setIndustryFilter('Bollywood');
+    } else if (item.id === 'hollywood') {
+      setCurrentTab('movie');
+      setIndustryFilter('Hollywood');
+    } else {
+      setCurrentTab(item.id);
+      setIndustryFilter('All');
+    }
+    setMobileMenuOpen(false);
+  };
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
       isScrolled 
-        ? 'bg-[#0b0c14]/90 backdrop-blur-md border-b border-white/10 shadow-2xl py-3' 
-        : 'bg-gradient-to-b from-black/90 via-black/40 to-transparent py-5'
+        ? 'bg-[#090a0f]/95 backdrop-blur-md border-b border-white/[0.08] shadow-2xl py-3' 
+        : 'bg-gradient-to-b from-black/90 via-black/50 to-transparent py-4'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           
           {/* Brand Logo */}
           <div 
-            onClick={() => { setCurrentTab('all'); setMobileMenuOpen(false); }}
-            className="flex items-center gap-2.5 cursor-pointer group"
+            onClick={() => { setCurrentTab('all'); setIndustryFilter('All'); setMobileMenuOpen(false); }}
+            className="flex items-center gap-2.5 cursor-pointer group select-none"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-400 p-0.5 shadow-lg shadow-purple-600/30 group-hover:scale-105 transition-transform">
-              <div className="w-full h-full bg-[#0d0e17] rounded-[10px] flex items-center justify-center">
-                <Play className="w-5 h-5 text-cyan-400 fill-cyan-400 ml-0.5 group-hover:text-purple-400 group-hover:fill-purple-400 transition-colors" />
-              </div>
+            <div className="w-9 h-9 rounded-lg bg-[#e50914] flex items-center justify-center shadow-lg shadow-red-900/30 group-hover:scale-105 transition-transform">
+              <Play className="w-5 h-5 text-white fill-white ml-0.5" />
             </div>
             <div className="flex flex-col">
-              <span className="font-extrabold text-2xl tracking-tight leading-none text-white">
-                SHADOW<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">PLEX</span>
+              <span className="font-black text-2xl tracking-tighter leading-none text-white">
+                SHADOW<span className="text-[#e50914]">PLEX</span>
               </span>
               <span className="text-[9px] font-semibold tracking-widest text-gray-400 uppercase">
-                Stream & Download
+                Cinema • Streaming • 4K UHD
               </span>
             </div>
           </div>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center gap-1 bg-white/5 backdrop-blur-lg px-3 py-1.5 rounded-full border border-white/10">
+          <div className="hidden lg:flex items-center gap-1 bg-white/[0.04] px-2.5 py-1 rounded-full border border-white/[0.08]">
             {navItems.map(item => {
-              const Icon = item.icon;
-              const isActive = currentTab === item.id;
+              const isActive = (item.id === 'bollywood' && industryFilter === 'Bollywood') ||
+                               (item.id === 'hollywood' && industryFilter === 'Hollywood') ||
+                               (item.id === currentTab && industryFilter === 'All');
+
               return (
                 <button
                   key={item.id}
-                  onClick={() => setCurrentTab(item.id)}
-                  className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  onClick={() => handleNavClick(item)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     isActive
-                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30'
-                      : 'text-gray-300 hover:text-white hover:bg-white/5'
+                      ? 'bg-[#e50914] text-white shadow-md'
+                      : 'text-gray-300 hover:text-white hover:bg-white/[0.06]'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
                   {item.label}
                 </button>
               );
@@ -97,22 +116,23 @@ export default function Navbar({
             {/* Search Button */}
             <button
               onClick={onOpenSearch}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all group"
-              title="Search Movies & Series"
+              className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-300 hover:text-white bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl transition-all group"
+              title="Search Movies, Series, Cast (⌘K)"
             >
-              <Search className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
-              <span className="hidden sm:inline text-xs text-gray-400 font-mono">⌘K</span>
+              <Search className="w-4 h-4 text-gray-300 group-hover:text-[#e50914] transition-colors" />
+              <span className="hidden sm:inline">Search</span>
+              <span className="hidden sm:inline text-[10px] text-gray-500 font-mono bg-white/5 px-1.5 py-0.5 rounded">⌘K</span>
             </button>
 
             {/* Downloads Manager Toggle */}
             <button
               onClick={() => setIsManagerOpen(!isManagerOpen)}
-              className="relative p-2.5 text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
+              className="relative p-2.5 text-gray-300 hover:text-white bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl transition-all"
               title="Download Manager"
             >
-              <Download className={`w-4 h-4 ${activeCount > 0 ? 'text-cyan-400 animate-bounce' : 'text-gray-300'}`} />
+              <Download className={`w-4 h-4 ${activeCount > 0 ? 'text-[#e50914] animate-bounce' : 'text-gray-300'}`} />
               {activeCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-cyan-400 to-blue-500 text-[10px] font-bold text-black rounded-full flex items-center justify-center animate-pulse">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#e50914] text-[10px] font-bold text-white rounded-full flex items-center justify-center">
                   {activeCount}
                 </span>
               )}
@@ -121,17 +141,17 @@ export default function Navbar({
             {/* Admin CMS Button */}
             <button
               onClick={onOpenAdmin}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-purple-300 bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/30 rounded-xl transition-all shadow-sm"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-gray-300 hover:text-white bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl transition-all"
               title="ShadowPlex CMS"
             >
-              <ShieldCheck className="w-4 h-4 text-purple-400" />
-              <span>Admin CMS</span>
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
+              <span>CMS</span>
             </button>
 
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-gray-300 hover:text-white bg-white/5 rounded-xl"
+              className="lg:hidden p-2 text-gray-300 hover:text-white bg-white/5 rounded-xl"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -141,36 +161,24 @@ export default function Navbar({
 
         {/* Mobile Dropdown Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden mt-3 pt-3 border-t border-white/10 bg-[#0d0e17]/95 rounded-2xl p-4 space-y-2 glass-panel shadow-2xl">
-            {navItems.map(item => {
-              const Icon = item.icon;
-              const isActive = currentTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setCurrentTab(item.id);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium ${
-                    isActive
-                      ? 'bg-purple-600 text-white font-semibold'
-                      : 'text-gray-300 hover:bg-white/5'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {item.label}
-                </button>
-              );
-            })}
+          <div className="lg:hidden mt-3 pt-3 border-t border-white/10 bg-[#0d0f17] rounded-2xl p-4 space-y-2 glass-panel shadow-2xl">
+            {navItems.map(item => (
+              <button
+                key={item.id}
+                onClick={() => handleNavClick(item)}
+                className="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5"
+              >
+                {item.label}
+              </button>
+            ))}
             <button
               onClick={() => {
                 onOpenAdmin();
                 setMobileMenuOpen(false);
               }}
-              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-purple-300 bg-purple-950/40 border border-purple-500/30"
+              className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-amber-400 bg-white/5"
             >
-              <ShieldCheck className="w-4 h-4 text-purple-400" />
+              <ShieldCheck className="w-4 h-4" />
               Admin Management Console
             </button>
           </div>
